@@ -1,1 +1,2 @@
-init readme
+Excel sheet used for building this webapp: https://levelaccess-my.sharepoint.com/:x:/p/nell_k/EcqRE5riS3NKmVTkbZzTKUYBtACbURetw7V4FpNNMZGQ3A?email=wesley.hulsizer%40levelaccess.com&e=0vhmsU 
+Codepen for rapid dev or alterations: https://codepen.io/whulsizerlvl/full/MYYXKoG
