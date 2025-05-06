@@ -1,0 +1,71 @@
+<head>
+  <title>Project Scope Estimator</title>
+</head>
+
+<body>
+
+  <h1>Project Scope Estimator</h1>
+
+  <form aria-labelledby="project-scope-form" id="project-scope-form">
+    <div class="form-container">
+
+      <fieldset class="main-inputs">
+        <legend>Project Details</legend>
+        <p>Please complete the form to estimate how long the testing project may take.</p>
+
+        <label for="complexity">Client Testing Complexity:</label>
+        <select id="complexity" aria-label="Client Testing Complexity">
+          <option value="Standard">Standard</option>
+          <option value="Difficult">Difficult</option>
+          <option value="Exceptional">Exceptional</option>
+        </select>
+
+        <label for="onshore">Onshore Testing Required:</label>
+        <select id="onshore" aria-label="Onshore Testing Required">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+
+        <label for="vpat">VPAT Required:</label>
+        <select id="vpat" aria-label="VPAT Required">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+
+        <label for="pages">Estimated Number of Pages:</label>
+        <input type="number" id="pages" min="1" value="10" aria-label="Estimated Number of Pages">
+      </fieldset>
+
+      <h2 id="results" aria-live="polite"></h2>
+      <fieldset class="advanced-inputs">
+        <legend>Advanced Settings</legend>
+        <p>These are auto-calculated but can be edited by activating the "Enabling Editing" button. It is unlikely that you will need to change these fields.</p>
+
+        <button type="button" onclick="toggleAdvancedInputs()">Enable Editing</button>
+
+        <label for="pageEffort">Page Effort:</label>
+        <input id="pageEffort" value="4.5" disabled aria-label="Page Effort">
+
+        <label for="scoping">Scoping:</label>
+        <input id="scoping" value="10" disabled aria-label="Scoping">
+
+        <label for="vpatTime">VPAT:</label>
+        <input id="vpatTime" value="10" disabled aria-label="VPAT Time">
+
+        <label for="triage">Triage & Setup:</label>
+        <input id="triage" value="2" disabled aria-label="Triage and Setup">
+
+        <label for="finalReview">Final Review:</label>
+        <input id="finalReview" value="0.5" disabled aria-label="Final Review">
+
+        <label for="difficultyMultiplier">Difficulty Multiplier:</label>
+        <input id="difficultyMultiplier" value="1" disabled aria-label="Difficulty Multiplier">
+
+        <label for="onshoreMultiplier">Onshore Multiplier:</label>
+        <input id="onshoreMultiplier" value="1" disabled aria-label="Onshore Multiplier">
+      </fieldset>
+
+    </div>
+  </form>
+
+</body>
