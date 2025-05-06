@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project LOE Estimate Calculator with Delivery Date</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .client-message {
+            margin-top: 20px;
+        }
+        #resultsContainer, #clientMessageContainer {
+            display: none; /* Initially hide the output sections */
+        }
+        label {
+            font-weight: bold; /* Make all labels bold */
+        }
+
+    </style>
+</head>
+<body onload="setDefaultDate()">
+
+    <div class="container mt-5">
+        <h1 class="text-center">Core Services Level of Effort Calculator</h1>
+
+        <h2 class="mt-4">Input Parameters</h2>
+        <div class="form-group">
+            <label for="complexity">Client Testing Complexity:</label>
+            <select id="complexity" class="form-control">
+                <option value="Standard">Standard - Public facing asset, shareable accounts</option>
+                <option value="Difficult">Difficult - Asset requires VPN, IP Whitelisting, Credit Card purchasing, or requires testing against a standard beyond WCAG 2.x. (508 Testing).</option>
+                <option value="Exceptional">Exceptional - Asset requires onboarded team members, non-shareable accounts, MFA.</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="onshore">Onshore Testing Required:</label>
+            <select id="onshore" class="form-control">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="vpat">VPAT Required:</label>
+            <select id="vpat" class="form-control">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="pages">Estimated Number of Pages:</label>
+            <input type="number" id="pages" class="form-control" value="20" min="1">
+        </div>
+        <div class="form-group">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" class="form-control">
+        </div>
+        <button class="btn btn-primary" aria-label="Calculate Level of Effort" onclick="calculateLOE()">Calculate LOE</button>
+
+        <div id="resultsContainer" tabindex="-1">
+            <h2 class="mt-4" role="status">Success!</h2>
+            <div class="result alert alert-success" id="results"></div>
+            <div class="estimated-delivery alert alert-info" id="estimatedDelivery"></div>
+        </div>
+        <div id="clientMessageContainer">
+            <h3>Client Message</h3>
+            <div class="client-message" id="clientMessage"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Preset variables from Settings tab in excel sheet
+        const scoping = 10; // B10
+        const vpat = 10; // B11
+        const pageEffort = 4.5; // B12
+        const ts = 2; // B13
+        const finalReview = 0.5; // B14
+
+        function setDefaultDate() {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+            const yyyy = today.getFullYear();
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+            document.getElementById("startDate").value = formattedDate;
+        }
+
+        function calculateLOE() {
+            const complexity = document.getElementById("complexity").value;
+            const onshore = document.getElementById("onshore").value;
+            const vpatRequired = document.getElementById("vpat").value;
+            const estimatedPages = parseFloat(document.getElementById("pages").value);
+            const startDate = new Date(document.getElementById("startDate").value);
+
+            // Set difficulty and onshore multipliers (B15 + B16)
+            let difficultyMultiplier;
+            switch (complexity) {
+                case "Standard":
+                    difficultyMultiplier = 1.0;
+                    break;
+                case "Difficult":
+                    difficultyMultiplier = 1.1;
+                    break;
+                case "Exceptional":
+                    difficultyMultiplier = 1.3;
+                    break;
+            }
+
+            const onshoreMultiplier = onshore === "Yes" ? 2.0 : 1.0;
+
+            // Calculate Testing Timeline
+            const testingTimeline = (estimatedPages * pageEffort / 8 * onshoreMultiplier * difficultyMultiplier) + ts + (finalReview * estimatedPages / 8);
+            const adjustedTestingTimeline = Math.ceil(testingTimeline < 10 ? 10 : testingTimeline); // Round days up to the next full day with Math.ceil function
+
+            // Calculate VPAT Timeline
+            const vpatTimeline = vpatRequired === "Yes" ? vpat : 0;
+
+            // Calculate Total Timeline (Scoping + Testing + VPAT)
+            const totalTimeline = adjustedTestingTimeline + vpatTimeline + scoping;
+
+            // Calculate Estimated Delivery Date
+            const estimatedDeliveryDate = calculateBusinessDays(startDate, totalTimeline);
+
+            // Display results
+            document.getElementById("results").innerHTML = `
+                <strong>Scoping Timeline:</strong> ${scoping} Days<br>
+                <strong>Testing Timeline:</strong> ${adjustedTestingTimeline} Days<br>
+                <strong>VPAT Timeline:</strong> ${vpatTimeline} Days<br>
+                <strong>Overall Project Timeline:</strong> ${Math.ceil(totalTimeline)} Days
+            `;
+            document.getElementById("estimatedDelivery").innerHTML = `
+                <strong>Estimated Delivery Date:</strong> ${estimatedDeliveryDate.toDateString()}
+            `;
+            document.getElementById("resultsContainer").style.display = "block"; // Show results section
+            document.getElementById("resultsContainer").scrollIntoView({ behavior: 'auto', block: 'start', inline: 'start' }); // Scroll down on the page. 
+            document.getElementById("resultsContainer").focus(); // Set focus so screen reader is informed of changes on page. 
+
+            // Generate Client Message
+            const onshoreText = onshore === "Yes" ? "does" : "does not";
+            const vpatText = vpatRequired === "Yes" ? "Once you are ready, it will take an additional 10 business days to have a VPAT written." : "No VPAT is included in this Test Plan.";
+            const clientMessage = `
+                <p>This project has ${complexity} complexity, ${onshoreText} require onshore resources, and ${onshoreText} require a VPAT. The evaluation will test ${estimatedPages} pages of the asset.</p>
+                <p>The first step in the process is acquiring access, scoping a Representative Sample and creating a Test Plan. That typically takes 10 business days or less. Then testing can begin - we estimate that the testing for this project will take an additional ${adjustedTestingTimeline} business days to complete.</p>
+                <p>Once the testing is complete, you'll likely need time to remediate findings and then submit them for validation. That remediation timeline is up to you, so add as much time to our overall project timeline as you will need. It is common for projects to go through about 2 rounds of remediation and validation, as sometimes fixing one issue uncovers another or doesn't fully solve the problem.</p>
+                <p>${vpatText}</p>
+                <p><strong>Overall Project Timeline:</strong> ${Math.ceil(totalTimeline)} Business Days.</p>
+            `;
+
+            document.getElementById("clientMessage").innerHTML = clientMessage;
+            document.getElementById("clientMessageContainer").style.display = "block"; // Show client message section
+        }
+
+        function calculateBusinessDays(startDate, daysToAdd) {
+            let currentDate = new Date(startDate);
+            let addedDays = 0;
+
+            // Start adding days from the next day
+            while (addedDays < daysToAdd) {
+                currentDate.setDate(currentDate.getDate() + 1);
+                // Check if the current day is a weekday (Monday to Friday)
+                if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+                    addedDays++;
+                }
+            }
+            return currentDate; // Return the final date after adding business days
+        }
+    </script>
+
+</body>
+</html>

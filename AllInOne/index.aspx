@@ -7,7 +7,6 @@
     <title>Project Scope Estimator</title>
     <meta charset="utf-8" />
     <style>
-      /* (Keep all your CSS as-is — truncated here for brevity) */
       body {
         font-family: "Segoe UI", "Helvetica Neue", sans-serif;
         background-color: #fafafa;
