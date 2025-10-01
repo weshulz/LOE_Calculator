@@ -48,10 +48,115 @@ function toggleAdvancedInputs() {
       onshoreInput.value = onshore === "Yes" ? 2 : 1;
     }
   }
+
+  // Load services list from services.json and populate the serviceType select
+  async function loadServices() {
+    // Embedded fallback for when fetch is blocked (file:// pages) or network fails
+    const defaultServices = [
+      { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
+      { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
+      { Services: 'Internal: VPAT representative sample', ATTC: 34.71, Buffer: 10 },
+      { Services: 'Live Consultation', ATTC: 15, Buffer: 10 },
+      { Services: 'Technical Question', ATTC: 13, Buffer: 10 },
+      { Services: 'Validation', ATTC: 12, Buffer: 10 },
+      { Services: 'VPAT', ATTC: 24, Buffer: 10 },
+      { Services: 'VPAT Update', ATTC: 24, Buffer: 10 },
+      { Services: 'Demand Review', ATTC: 10, Buffer: 10 },
+      { Services: 'Design Evaluation', ATTC: 33, Buffer: 10 }
+    ];
+
+    const select = document.getElementById('serviceType');
+    let services = null;
+    try {
+      // try loading from data/services.json first (matches repository structure)
+      const resp = await fetch('data/services.json');
+      if (resp.ok) {
+        services = await resp.json();
+      } else {
+        // fallback to top-level services.json
+        const resp2 = await fetch('services.json');
+        if (resp2.ok) services = await resp2.json();
+      }
+    } catch (err) {
+      // Fetch can fail on file:// pages due to CORS — fall back to embedded data
+      console.warn('Could not fetch services.json (falling back to embedded data)', err);
+    }
+
+    if (!services) services = defaultServices;
+
+    services.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.Services;
+      opt.textContent = s.Services;
+      opt.dataset.attc = s.ATTC;
+      opt.dataset.buffer = s.Buffer;
+      select.appendChild(opt);
+    });
+
+    // Default to Full Manual Evaluation (manual) so existing fields are used
+    if (select.querySelector('option[value="Full Manual Evaluation"]')) {
+      select.value = 'Full Manual Evaluation';
+    }
+
+    select.addEventListener('change', () => {
+      // Show/hide inputs depending on service selection
+      const val = select.value;
+      const advanced = document.querySelector('.advanced-inputs');
+  // If service is manual, only treat exact names as manual to avoid accidental matches
+  const manualNames = ['Full Manual Evaluation', 'Evaluation'];
+  const isManual = manualNames.includes(val);
+
+      // Fields inside .main-inputs we want to toggle (but keep the serviceType select visible)
+      const toggleIds = ['complexity', 'onshore', 'vpat', 'pages'];
+      toggleIds.forEach((id) => {
+        const input = document.getElementById(id);
+        const label = document.querySelector(`label[for="${id}"]`);
+        if (input) input.style.display = isManual ? '' : 'none';
+        if (label) label.style.display = isManual ? '' : 'none';
+      });
+
+      // Keep startDate visible so users can still set a date when a non-manual service is chosen
+      const startLabel = document.querySelector('label[for="startDate"]');
+      const startInput = document.getElementById('startDate');
+      const startHint = document.getElementById('startDateHint');
+      if (startLabel) startLabel.style.display = '';
+      if (startInput) startInput.style.display = '';
+      if (startHint) startHint.style.display = '';
+
+      // Show findingsCount only for Validation
+      const findingsLabel = document.querySelector('label[for="findingsCount"]');
+      const findingsInput = document.getElementById('findingsCount');
+      if (findingsLabel && findingsInput) {
+        if (val === 'Validation') {
+          findingsLabel.style.display = '';
+          findingsInput.style.display = '';
+        } else {
+          findingsLabel.style.display = 'none';
+          findingsInput.style.display = 'none';
+        }
+      }
+
+      // Toggle advanced section
+      if (!isManual) {
+        advanced.style.display = 'none';
+      } else {
+        advanced.style.display = '';
+      }
+
+      calculate();
+    });
+  }
   
   
   function calculate() {
     updateMultipliers();
+
+    // If a non-manual service is selected, prefer the ATTC + Buffer as the timeline
+    const serviceSelect = document.getElementById('serviceType');
+    const selectedService = serviceSelect ? serviceSelect.value : null;
+    const selectedOption = serviceSelect ? serviceSelect.selectedOptions[0] : null;
+  const manualNames = ['Full Manual Evaluation', 'Evaluation'];
+  const isManual = selectedService ? manualNames.includes(selectedService) : true;
   
     const pages = parseFloat(document.getElementById("pages").value) || 0;
     const vpat = document.getElementById("vpat").value === "Yes";
@@ -79,19 +184,69 @@ function toggleAdvancedInputs() {
     let testingTimeline = baseEffort + triage + reviewEffort;
     if (testingTimeline < 10) testingTimeline = 10;
   
-    const totalTimeline = scoping + testingTimeline + vpatTime;
-  
-    document.getElementById(
-      "results"
-    ).innerHTML = `Estimated Total Timeline: <span>${totalTimeline.toFixed(
-      1
-    )} Business Days</span>`;
+    let totalTimeline = scoping + testingTimeline + vpatTime;
+
+    // If non-manual service selected, override with ATTC + Buffer
+    if (!isManual && selectedOption) {
+      let attc = parseFloat(selectedOption.dataset.attc) || 0;
+      const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
+
+      // If Validation, add findings-based days: 1 day per 20 findings
+      if (selectedOption.value === 'Validation') {
+        const findings = parseInt(document.getElementById('findingsCount').value) || 0;
+        const extra = Math.floor(findings / 20);
+        attc += extra;
+      }
+
+      totalTimeline = attc + buffer;
+    }
+
+    const resultsList = document.getElementById("resultsList");
+    // Clear previous results
+    resultsList.innerHTML = "";
+
+    // Estimated Total Timeline
+    const dtTimeline = document.createElement("dt");
+    dtTimeline.textContent = "Estimated Total Timeline:";
+    const ddTimeline = document.createElement("dd");
+    ddTimeline.innerHTML = `<span>${totalTimeline.toFixed(1)} Business Days</span>`;
+    resultsList.appendChild(dtTimeline);
+    resultsList.appendChild(ddTimeline);
+
+    // Compute Estimated Delivery Date if a start date is provided
+    const startDateValue = document.getElementById("startDate").value;
+    if (startDateValue) {
+      const start = new Date(startDateValue);
+      const delivery = addBusinessDays(start, Math.round(totalTimeline));
+      const dtDelivery = document.createElement("dt");
+      dtDelivery.textContent = "Estimated Delivery Date:";
+      const ddDelivery = document.createElement("dd");
+      ddDelivery.innerHTML = `<span>${delivery.toLocaleDateString()}</span>`;
+      resultsList.appendChild(dtDelivery);
+      resultsList.appendChild(ddDelivery);
+    }
+  }
+
+  // Adds n business days to the given date (skips weekends)
+  function addBusinessDays(date, days) {
+    const result = new Date(date);
+    let added = 0;
+    while (added < days) {
+      result.setDate(result.getDate() + 1);
+      const day = result.getDay();
+      if (day !== 0 && day !== 6) {
+        added++;
+      }
+    }
+    return result;
   }
   
   // Watch for updates
-  ["complexity", "onshore", "vpat", "pages"].forEach((id) => {
-    document.getElementById(id).addEventListener("input", calculate);
-  });
+    ["complexity", "onshore", "vpat", "pages", "findingsCount"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", calculate);
+    });
+  document.getElementById("startDate").addEventListener("input", calculate);
   
   // Also watch advanced fields when unlocked
   [
@@ -106,5 +261,13 @@ function toggleAdvancedInputs() {
     document.getElementById(id).addEventListener("input", calculate);
   });
   
-  calculate(); // Initial calculation
+  // If no start date is set, default it to today so we have a delivery calculation on load
+  const startInput = document.getElementById("startDate");
+  if (startInput && !startInput.value) {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    startInput.value = today;
+  }
+
+  // Populate services then calculate
+  loadServices().then(() => calculate()); // Initial calculation after services load
   

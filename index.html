@@ -14,30 +14,47 @@
         <legend>Project Details</legend>
         <p>Please complete the form to estimate how long the testing project may take.</p>
 
-        <label for="complexity">Client Testing Complexity:</label>
-        <select id="complexity" aria-label="Client Testing Complexity">
-          <option value="Standard">Standard</option>
-          <option value="Difficult">Difficult</option>
-          <option value="Exceptional">Exceptional</option>
-        </select>
+        <label for="serviceType">Service Type:</label>
+        <div id="serviceTypeHint" class="hint">Choose the type of service; selecting non-manual services will auto-calculate timeline.</div>
+        <select id="serviceType" aria-describedby="serviceTypeHint"></select>
 
-        <label for="onshore">Onshore Testing Required:</label>
-        <select id="onshore" aria-label="Onshore Testing Required">
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
+        <div class="service-details">
+          <h3>Service Details</h3>
+           <label for="startDate">Service Ticket Created Date:</label>
+          <!-- Accessible hint for start date format; announced by screen readers via aria-describedby -->
+          <div id="startDateHint" class="hint">Enter a start date (format: YYYY-MM-DD). If left blank, defaults to today.</div>
+          <input type="date" id="startDate" aria-describedby="startDateHint">
 
-        <label for="vpat">VPAT Required:</label>
-        <select id="vpat" aria-label="VPAT Required">
-          <option value="No">No</option>
-          <option value="Yes">Yes</option>
-        </select>
+          <label for="complexity">Client Testing Complexity:</label>
+          <select id="complexity">
+            <option value="Standard">Standard</option>
+            <option value="Difficult">Difficult</option>
+            <option value="Exceptional">Exceptional</option>
+          </select>
 
-        <label for="pages">Estimated Number of Pages:</label>
-        <input type="number" id="pages" min="1" value="10" aria-label="Estimated Number of Pages">
+          <label for="onshore">Onshore Testing Required:</label>
+          <select id="onshore">
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+
+          <label for="vpat">VPAT Required:</label>
+          <select id="vpat">
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+
+          <label for="pages">Estimated Number of Pages:</label>
+          <input type="number" id="pages" min="1" value="10">
+
+          <label for="findingsCount" style="display:none">Finding Count:</label>
+          <input type="number" id="findingsCount" min="0" value="0" style="display:none">
+        </div>
       </fieldset>
 
-      <h2 id="results" aria-live="polite"></h2>
+      <div id="results" aria-live="polite">
+        <dl id="resultsList"></dl>
+      </div>
       <fieldset class="advanced-inputs">
         <legend>Advanced Settings</legend>
         <p>These are auto-calculated but can be edited by activating the "Enabling Editing" button. It is unlikely that you will need to change these fields.</p>
@@ -45,25 +62,25 @@
         <button type="button" onclick="toggleAdvancedInputs()">Enable Editing</button>
 
         <label for="pageEffort">Page Effort:</label>
-        <input id="pageEffort" value="4.5" disabled aria-label="Page Effort">
+        <input id="pageEffort" value="4.5" disabled>
 
         <label for="scoping">Scoping:</label>
-        <input id="scoping" value="10" disabled aria-label="Scoping">
+        <input id="scoping" value="10" disabled>
 
         <label for="vpatTime">VPAT:</label>
-        <input id="vpatTime" value="10" disabled aria-label="VPAT Time">
+        <input id="vpatTime" value="10" disabled>
 
         <label for="triage">Triage & Setup:</label>
-        <input id="triage" value="2" disabled aria-label="Triage and Setup">
+        <input id="triage" value="2" disabled>
 
         <label for="finalReview">Final Review:</label>
-        <input id="finalReview" value="0.5" disabled aria-label="Final Review">
+        <input id="finalReview" value="0.5" disabled>
 
         <label for="difficultyMultiplier">Difficulty Multiplier:</label>
-        <input id="difficultyMultiplier" value="1" disabled aria-label="Difficulty Multiplier">
+        <input id="difficultyMultiplier" value="1" disabled>
 
         <label for="onshoreMultiplier">Onshore Multiplier:</label>
-        <input id="onshoreMultiplier" value="1" disabled aria-label="Onshore Multiplier">
+        <input id="onshoreMultiplier" value="1" disabled>
       </fieldset>
 
     </div>

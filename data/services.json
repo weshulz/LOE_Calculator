@@ -1,0 +1,12 @@
+[
+  { "Services": "Evaluation", "ATTC": 44, "Buffer": 10 },
+  { "Services": "Full Manual Evaluation", "ATTC": 37, "Buffer": 10 },
+  { "Services": "Internal: VPAT representative sample", "ATTC": 34.71, "Buffer": 10 },
+  { "Services": "Live Consultation", "ATTC": 15, "Buffer": 10 },
+  { "Services": "Technical Question", "ATTC": 13, "Buffer": 10 },
+  { "Services": "Validation", "ATTC": 12, "Buffer": 10 },
+  { "Services": "VPAT", "ATTC": 24, "Buffer": 10 },
+  { "Services": "VPAT Update", "ATTC": 24, "Buffer": 10 },
+  { "Services": "Demand Review", "ATTC": 10, "Buffer": 10 },
+  { "Services": "Design Evaluation", "ATTC": 33, "Buffer": 10 }
+]
