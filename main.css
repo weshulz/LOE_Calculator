@@ -1,6 +1,6 @@
 body {
     font-family: "Segoe UI", "Helvetica Neue", sans-serif;
-    background-color: #fafafa;
+    background: linear-gradient(121.27deg,#100424 45.87%,#3d0f8a 119.08%)
     margin: auto;
     padding: 2rem;
     color: #1a1a1a;
@@ -29,7 +29,7 @@ body {
   h1 {
     font-size: 1.75rem;
     margin-bottom: 2rem;
-    color: #003057;
+    color: #ffffff;
   }
   h2 {
     font-size: 1.25rem;
