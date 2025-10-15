@@ -225,8 +225,8 @@ function calculate() {
     const finalRev = parseFloat(mult.finalReview) || 0.5;
 
     // totalTimeline = Eval ATTC + Eval buffer + repSample + pages*finalReview + pages*pageEffort
-    console.log(attc + buffer + repSample + pagesCount * finalRev + pagesCount * pageEff);
-    totalTimeline = attc + buffer + repSample + pagesCount * finalRev + pagesCount * pageEff;
+    console.log('attc: ', attc, '| buf: ', buffer, '| repSamp: ', repSample, '| page count: ', pagesCount, '| finalrev: ',  finalRev, '| pageEff: ', pageEff);
+    totalTimeline = attc + buffer + repSample + (pagesCount * finalRev) + (pagesCount * pageEff);
   } else if (!isManual && selectedOption) {
     let attc = parseFloat(selectedOption.dataset.attc) || 0;
     const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
