@@ -9,7 +9,7 @@ Files of interest
 - `index.html` — main UI
 - `main.js` — calculation logic and UI wiring
 - `main.css` — minimal styles
-- `data/services.json` — service definitions (Services, ATTC, Buffer). This file is used to populate the Service Type select.
+- `data/services.json` — service values (Services, ATTC, Buffer). This file is used to populate the Service Type select. If changing the values does not have an effect, you need to edit them in main.js. The json file calls may fail depending on user setup. 
 
 Overview
 --------
@@ -23,14 +23,6 @@ Why you may not see services listed locally
 -------------------------------------------------
 If you open `index.html` directly in the browser (file:// URL), modern browsers block fetch requests for local files (CORS/origin null). To make the app fetch `data/services.json` correctly, serve the folder over HTTP. Example (from the project root):
 
-```bash
-# macOS / Linux: serve on port 8000
-python3 -m http.server 8000
-
-# then open in your browser:
-http://localhost:8000/index.html
-```
-
 The app includes a safe embedded fallback containing the same service data. If the fetch fails (for example, when opened via file://), the UI will still populate from the embedded data and function normally. When served over HTTP, the app will use the JSON file in `data/services.json`.
 
 Development notes
@@ -43,9 +35,6 @@ Development notes
 Next improvements (ideas)
 - Add holiday calendar support for delivery date calculations.
 - Show service ATTC and Buffer in the results area.
-- Improve styling of hints and layout in `main.css`.
-
-If you want any of the above implemented, tell me which and I'll add it.
 
 ATTC = Average time to completion
 

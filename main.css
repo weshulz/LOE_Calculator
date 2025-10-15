@@ -53,13 +53,10 @@ select {
   border: 1px solid black;
   background-color: #fff;
   box-sizing: border-box;
+  border-radius: 4px;
 }
 
-input:disabled {
-  background-color: #f0f0f0;
-  color: #666;
-}
-
+input:disabled,
 select:disabled {
   background-color: #f0f0f0;
   color: #666;
@@ -86,28 +83,42 @@ button:hover {
 
 #results {
   border: 1px solid black;
-  padding: 2.5rem 1rem;
+  padding: 1.25rem 1rem;
   margin-top: 0.75rem;
   background: rgba(0, 0, 0, 0.03);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  
   font-weight: 600;
-  font-size: 1.2rem;
-  height: 100%;
+  font-size: 1rem;
+  border-radius: 6px;
   min-height: 4rem;
+}
+
+#results dl {
+  margin: 0;
+}
+
+#results dt {
+  font-weight: 600;
+  color: #23303b;
+  margin-top: 0.5rem;
 }
 
 #results dd {
   color: #0665d0;
-  border-bottom: 1px solid #0665d0;
-  font-weight: 900;
-  margin: 0.25rem 2rem 2rem;
+  font-weight: 800;
+  margin: 0.25rem 0 0.75rem 0;
+  padding-bottom: 0.5rem;
 }
 
 .hint {
   padding-bottom: 0.25rem;
+  font-size: 0.95rem;
+  color: #444;
+  background: rgba(6, 101, 208, 0.04);
+  border-left: 3px solid rgba(6, 101, 208, 0.12);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
 }
 
 .form-container {
@@ -127,7 +138,7 @@ button:hover {
   padding: 1rem;
   border-radius: 6px;
   margin-top: 0.5rem;
-  border: 1px solid #000;
+  border: 1px solid black;
 }
 
 /* Hide detailed inputs and advanced settings from the UI for now (kept in DOM) */
@@ -145,11 +156,11 @@ button[type="button"] {
 }
 
 /* button[type="button"]:hover,  button[type="button"]:focus{
-    color: black; 
-    outline: 1px solid black;
-    border: 1px solid white;
-    text-decoration: underline;
-  } */
+      color: black; 
+      outline: 1px solid black;
+      border: 1px solid white;
+      text-decoration: underline;
+    } */
 
 fieldset {
   border: 1px solid black;
