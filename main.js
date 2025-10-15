@@ -270,17 +270,21 @@ function calculate() {
   }
 }
 
-// Adds n business days to the given date (skips weekends)
+// Adds or subtracts n business days to a given date (skips weekends)
 function addBusinessDays(date, days) {
   const result = new Date(date);
-  let added = 0;
-  while (added < days) {
-    result.setDate(result.getDate() + 1);
+  if (days === 0) return result;
+
+  const direction = Math.sign(days);
+  let remaining = Math.abs(days);
+
+  console.log('direction: ', direction, '| remaining days: ', remaining);
+  while (remaining > 0) {
+    result.setDate(result.getDate() + direction);
     const day = result.getDay();
-    if (day !== 0 && day !== 6) {
-      added++;
-    }
+    if (day !== 0 && day !== 6) remaining--;
   }
+
   return result;
 }
 
