@@ -130,6 +130,11 @@ button:hover {
   border: 1px solid #000;
 }
 
+/* Hide detailed inputs and advanced settings from the UI for now (kept in DOM) */
+.advanced-inputs {
+  display: none !important;
+}
+
 button[type="button"] {
   background: none;
   color: #0072ce;

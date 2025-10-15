@@ -2,7 +2,6 @@ function toggleAdvancedInputs() {
     const fields = [
       "pageEffort",
       "scoping",
-      "vpatTime",
       "triage",
       "finalReview",
       "difficultyMultiplier",
@@ -65,17 +64,34 @@ function toggleAdvancedInputs() {
       { Services: 'Design Evaluation', ATTC: 33, Buffer: 10 }
     ];
 
-    const select = document.getElementById('serviceType');
-    let services = null;
+  const select = document.getElementById('serviceType');
+  let services = null;
+  let multipliers = null;
     try {
       // try loading from data/services.json first (matches repository structure)
       const resp = await fetch('data/services.json');
       if (resp.ok) {
-        services = await resp.json();
+        const data = await resp.json();
+        // New schema wraps services and multipliers
+        if (data.services) {
+          services = data.services;
+          multipliers = data.multipliers || null;
+        } else {
+          // backward compatible: array
+          services = data;
+        }
       } else {
         // fallback to top-level services.json
         const resp2 = await fetch('services.json');
-        if (resp2.ok) services = await resp2.json();
+        if (resp2.ok) {
+          const data2 = await resp2.json();
+          if (data2.services) {
+            services = data2.services;
+            multipliers = data2.multipliers || null;
+          } else {
+            services = data2;
+          }
+        }
       }
     } catch (err) {
       // Fetch can fail on file:// pages due to CORS — fall back to embedded data
@@ -83,6 +99,16 @@ function toggleAdvancedInputs() {
     }
 
     if (!services) services = defaultServices;
+    // If the JSON contained multipliers use them, otherwise fall back to defaults
+    const GLOBAL_MULTIPLIERS = multipliers || {
+      scoping: 1.2,
+      pageEffort: 0.5625,
+      difficultyMultiplier: 1.0,
+      onshoreMultiplier: 1.0,
+      triage: 0.25,
+      finalReview: 0.0625,
+      repSample: 10
+    };
 
     services.forEach(s => {
       const opt = document.createElement('option');
@@ -98,24 +124,14 @@ function toggleAdvancedInputs() {
       select.value = 'Full Manual Evaluation';
     }
 
-    select.addEventListener('change', () => {
+  select.addEventListener('change', () => {
       // Show/hide inputs depending on service selection
       const val = select.value;
       const advanced = document.querySelector('.advanced-inputs');
-  // If service is manual, only treat exact names as manual to avoid accidental matches
-  const manualNames = ['Full Manual Evaluation', 'Evaluation'];
-  const isManual = manualNames.includes(val);
+      const manualNames = ['Full Manual Evaluation', 'Evaluation'];
+      const isManual = manualNames.includes(val);
 
-      // Fields inside .main-inputs we want to toggle (but keep the serviceType select visible)
-      const toggleIds = ['complexity', 'onshore', 'vpat', 'pages'];
-      toggleIds.forEach((id) => {
-        const input = document.getElementById(id);
-        const label = document.querySelector(`label[for="${id}"]`);
-        if (input) input.style.display = isManual ? '' : 'none';
-        if (label) label.style.display = isManual ? '' : 'none';
-      });
-
-      // Keep startDate visible so users can still set a date when a non-manual service is chosen
+      // Always keep Service Ticket Created Date visible
       const startLabel = document.querySelector('label[for="startDate"]');
       const startInput = document.getElementById('startDate');
       const startHint = document.getElementById('startDateHint');
@@ -123,7 +139,21 @@ function toggleAdvancedInputs() {
       if (startInput) startInput.style.display = '';
       if (startHint) startHint.style.display = '';
 
-      // Show findingsCount only for Validation
+      // Page count should only be visible for manual services
+      const pagesLabel = document.querySelector('label[for="pages"]');
+      const pagesInput = document.getElementById('pages');
+      if (pagesLabel) pagesLabel.style.display = isManual ? '' : 'none';
+      if (pagesInput) pagesInput.style.display = isManual ? '' : 'none';
+
+      // Complexity/onshore/vpat should be hidden for all services per new requirement
+      ['complexity', 'onshore', 'vpat'].forEach(id => {
+        const lab = document.querySelector(`label[for="${id}"]`);
+        const inp = document.getElementById(id);
+        if (lab) lab.style.display = 'none';
+        if (inp) inp.style.display = 'none';
+      });
+
+      // Findings count only for Validation (non-manual)
       const findingsLabel = document.querySelector('label[for="findingsCount"]');
       const findingsInput = document.getElementById('findingsCount');
       if (findingsLabel && findingsInput) {
@@ -136,15 +166,16 @@ function toggleAdvancedInputs() {
         }
       }
 
-      // Toggle advanced section
-      if (!isManual) {
-        advanced.style.display = 'none';
-      } else {
-        advanced.style.display = '';
-      }
+      // Always hide advanced settings (kept in DOM)
+      if (advanced) advanced.style.display = 'none';
 
       calculate();
     });
+    // Run the change handler once so the default selection visibility is applied
+    select.dispatchEvent(new Event('change'));
+    // expose globals for other functions to use
+    window.GLOBAL_SERVICES = services;
+    window.GLOBAL_MULTIPLIERS = GLOBAL_MULTIPLIERS;
   }
   
   
@@ -158,16 +189,13 @@ function toggleAdvancedInputs() {
   const manualNames = ['Full Manual Evaluation', 'Evaluation'];
   const isManual = selectedService ? manualNames.includes(selectedService) : true;
   
-    const pages = parseFloat(document.getElementById("pages").value) || 0;
-    const vpat = document.getElementById("vpat").value === "Yes";
-  
-    const pageEffort = parseFloat(document.getElementById("pageEffort").value);
-    const scoping = parseFloat(document.getElementById("scoping").value);
-    const vpatTime = vpat
-      ? parseFloat(document.getElementById("vpatTime").value)
-      : 0;
-    const triage = parseFloat(document.getElementById("triage").value);
-    const finalReview = parseFloat(document.getElementById("finalReview").value);
+  const pages = parseFloat(document.getElementById("pages").value) || 0;
+    // Populate inputs from GLOBAL_MULTIPLIERS where available so hidden fields get proper values
+    const mult = window.GLOBAL_MULTIPLIERS || {};
+    const pageEffort = parseFloat(mult.pageEffort || document.getElementById("pageEffort").value);
+    const scoping = parseFloat(mult.scoping || document.getElementById("scoping").value);
+    const triage = parseFloat(mult.triage || document.getElementById("triage").value);
+    const finalReview = parseFloat(mult.finalReview || document.getElementById("finalReview").value);
     const difficultyMultiplier = parseFloat(
       document.getElementById("difficultyMultiplier").value
     );
@@ -184,10 +212,21 @@ function toggleAdvancedInputs() {
     let testingTimeline = baseEffort + triage + reviewEffort;
     if (testingTimeline < 10) testingTimeline = 10;
   
-    let totalTimeline = scoping + testingTimeline + vpatTime;
+  let totalTimeline = scoping + testingTimeline;
 
-    // If non-manual service selected, override with ATTC + Buffer
-    if (!isManual && selectedOption) {
+    // Special-case Full Manual Evaluation: use combined Eval ATTC formula
+    if (selectedOption && selectedOption.value === 'Full Manual Evaluation') {
+      const mult = window.GLOBAL_MULTIPLIERS || {};
+      const attc = parseFloat(selectedOption.dataset.attc) || 0;
+      const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
+      const repSample = parseFloat(mult.repSample) || 10;
+      const pagesCount = parseFloat(document.getElementById('pages').value) || 0;
+      const pageEff = parseFloat(mult.pageEffort) || 1.5;
+      const finalRev = parseFloat(mult.finalReview) || 0.5;
+
+      // totalTimeline = Eval ATTC + Eval buffer + repSample + pages*finalReview + pages*pageEffort
+      totalTimeline = attc + buffer + repSample + pagesCount * finalRev + pagesCount * pageEff;
+    } else if (!isManual && selectedOption) {
       let attc = parseFloat(selectedOption.dataset.attc) || 0;
       const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
 
@@ -242,24 +281,17 @@ function toggleAdvancedInputs() {
   }
   
   // Watch for updates
-    ["complexity", "onshore", "vpat", "pages", "findingsCount"].forEach((id) => {
+    ["complexity", "onshore", "pages", "findingsCount"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.addEventListener("input", calculate);
     });
   document.getElementById("startDate").addEventListener("input", calculate);
   
   // Also watch advanced fields when unlocked
-  [
-    "pageEffort",
-    "scoping",
-    "vpatTime",
-    "triage",
-    "finalReview",
-    "difficultyMultiplier",
-    "onshoreMultiplier"
-  ].forEach((id) => {
-    document.getElementById(id).addEventListener("input", calculate);
-  });
+    ["pageEffort", "scoping", "triage", "finalReview", "difficultyMultiplier", "onshoreMultiplier"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", calculate);
+    });
   
   // If no start date is set, default it to today so we have a delivery calculation on load
   const startInput = document.getElementById("startDate");
@@ -269,5 +301,20 @@ function toggleAdvancedInputs() {
   }
 
   // Populate services then calculate
-  loadServices().then(() => calculate()); // Initial calculation after services load
+  loadServices().then(() => {
+    // Populate hidden inputs from GLOBAL_MULTIPLIERS so hidden fields have correct values
+    const mult = window.GLOBAL_MULTIPLIERS || {};
+    const setIfExists = (id, value) => {
+      const el = document.getElementById(id);
+      if (el && typeof value !== 'undefined') el.value = value;
+    };
+    setIfExists('pageEffort', mult.pageEffort);
+    setIfExists('scoping', mult.scoping);
+    setIfExists('triage', mult.triage);
+    setIfExists('finalReview', mult.finalReview);
+    setIfExists('difficultyMultiplier', mult.difficultyMultiplier);
+    setIfExists('onshoreMultiplier', mult.onshoreMultiplier);
+
+    calculate();
+  }); // Initial calculation after services load
   
