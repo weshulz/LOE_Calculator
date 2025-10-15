@@ -184,10 +184,9 @@ function calculate() {
 
   // If a non-manual service is selected, prefer the ATTC + Buffer as the timeline
   const serviceSelect = document.getElementById('serviceType');
-  const selectedService = serviceSelect ? serviceSelect.value : null;
-  const selectedOption = serviceSelect ? serviceSelect.selectedOptions[0] : null;
-  const manualNames = ['Full Manual Evaluation', 'Evaluation'];
-  const isManual = selectedService ? manualNames.includes(selectedService) : true;
+  const selectedOption = serviceSelect?.selectedOptions[0];
+  const selectedService = selectedOption?.value;
+  const isManual = !selectedService || ['Full Manual Evaluation', 'Evaluation'].includes(selectedService);
 
   const pages = parseFloat(document.getElementById("pages").value) || 0;
   // Populate inputs from GLOBAL_MULTIPLIERS where available so hidden fields get proper values
@@ -209,7 +208,10 @@ function calculate() {
   const reviewEffort =
     ((finalReview * pages) / 8) * difficultyMultiplier * onshoreMultiplier;
 
+  console.log('Base Effort: ', baseEffort.toFixed(2), '| Review Effort: ', reviewEffort.toFixed(2));
+
   let testingTimeline = baseEffort + triage + reviewEffort;
+  console.log('Testing Timeline: ', testingTimeline.toFixed(2));
   if (testingTimeline < 10) testingTimeline = 10;
 
   let totalTimeline = scoping + testingTimeline;
@@ -225,7 +227,7 @@ function calculate() {
     const finalRev = parseFloat(mult.finalReview) || 0.5;
 
     // totalTimeline = Eval ATTC + Eval buffer + repSample + pages*finalReview + pages*pageEffort
-    console.log('attc: ', attc, '| buf: ', buffer, '| repSamp: ', repSample, '| page count: ', pagesCount, '| finalrev: ',  finalRev, '| pageEff: ', pageEff);
+    console.log('attc: ', attc, '| buf: ', buffer, '| repSamp: ', repSample, '| page count: ', pagesCount, '| finalrev: ', finalRev, '| pageEff: ', pageEff);
     totalTimeline = attc + buffer + repSample + (pagesCount * finalRev) + (pagesCount * pageEff);
   } else if (!isManual && selectedOption) {
     let attc = parseFloat(selectedOption.dataset.attc) || 0;
@@ -238,6 +240,7 @@ function calculate() {
       attc += extra;
     }
 
+    console.log('ATTC: ', attc, '| Buffer: ', buffer);
     totalTimeline = attc + buffer;
   }
 
@@ -251,13 +254,13 @@ function calculate() {
   const ddTimeline = document.createElement("dd");
   ddTimeline.innerHTML = `<span>${totalTimeline.toFixed(1)} Business Days</span>`;
   resultsList.appendChild(dtTimeline);
-  resultsList.appendChild(ddTimeline);
 
   // Compute Estimated Delivery Date if a start date is provided
   const startDateValue = document.getElementById("startDate").value;
   if (startDateValue) {
     const start = new Date(startDateValue);
     const delivery = addBusinessDays(start, Math.round(totalTimeline));
+    console.log('Start Date: ', start.toLocaleDateString(), '| Delivery Date: ', delivery.toLocaleDateString());
     const dtDelivery = document.createElement("dt");
     dtDelivery.textContent = "Estimated Delivery Date:";
     const ddDelivery = document.createElement("dd");
