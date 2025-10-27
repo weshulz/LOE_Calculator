@@ -1,8 +1,12 @@
 Setup Quick Link for Users
 --------------------------
 
-1. If you're already on sharepoint, skip to step 2. Otherwise, go to https://levelaccess.sharepoint.com/:f:/r/sites/CX_Delivery/Shared%20Documents/CXDelivery_WebTools/TDD%20Web%20App%20(local%20webapp)?csf=1&web=1&e=TZNzd2
-2. Click on "Add shortcut to OneDrive".
-3. Go to your desktop (not the OneDrive web app) and open that folder. Named TDD Web App (local webapp).
+NOTE: IF you do not follow these steps exactly, it will NOT work! There is also a docx file with pictures in this folder if you prefer that alternative material. 
+
+1. If you're already on sharepoint in the TDD Web App (local webapp) folder, skip to step 2. 
+Otherwise, go to https://levelaccess.sharepoint.com/:f:/r/sites/CX_Delivery/Shared%20Documents/CXDelivery_WebTools/TDD%20Web%20App%20(local%20webapp)?csf=1&web=1&e=TZNzd2
+2. With the "TDD Web App (local webapp)" folder open, click on "Add shortcut to OneDrive". If you cannot find this button, make sure not files are currently marked as selected. 
+Once this shortcut is added, it will make coming back to it easier. 
+3. Go to your computers file explorer (not the OneDrive web app, this will not work) and open that folder. It may read as "CX_Delivery - TDD Web App (local webapp)".
 4. Open the `index.html` file in Google Chrome (or your preferred browser).
 5. Add this tab to your bookmarks for quick access.
