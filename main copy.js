@@ -1,166 +1,43 @@
 /*
-  MANAGER CONFIGURATION
-  ---------------------
-  This top section groups values a manager may edit without
-  digging through the implementation below. Edit these values to change the
-  app behavior. Keep the shapes consistent: services array entries must include
-  "Services", "ATTC", and "Buffer". Holidays should be ISO date strings
-  (YYYY-MM-DD). Multipliers represent numeric values in days used by the calculator.
+  Minimal calculator (simplified / dumbed-down)
+  - Uses ATTC + Buffer for all services except
+    'Full Manual Evaluation' which adds pages-based days.
+  - Shows the pages input only for 'Full Manual Evaluation'.
+  - Computes Estimated Delivery Date by adding business days (skips weekends).
+  - Keeps the script intentionally small and easy to read.
 */
 
-// Services: list of service types with ATTC and Buffer (editable)
-const MANAGER_SERVICES = [
-  { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
+// Simple manager-editable defaults (used if fetch fails)
+const DEFAULT_SERVICES = [
   { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
-  { Services: 'Internal: VPAT representative sample', ATTC: 34.71, Buffer: 10 },
-  { Services: 'Live Consultation', ATTC: 15, Buffer: 10 },
-  { Services: 'Technical Question', ATTC: 13, Buffer: 10 },
+  { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
   { Services: 'Validation', ATTC: 12, Buffer: 10 },
-  { Services: 'VPAT', ATTC: 24, Buffer: 10 },
-  { Services: 'VPAT Update', ATTC: 24, Buffer: 10 },
-  { Services: 'Demand Review', ATTC: 10, Buffer: 10 },
-  { Services: 'Design Evaluation', ATTC: 33, Buffer: 10 }
+  { Services: 'Live Consultation', ATTC: 15, Buffer: 10 }
 ];
 
-// Multipliers and small constants managers may adjust
-const MANAGER_MULTIPLIERS = {
-  scoping: 1.2,
-  pageEffort: 0.5625,
-  difficultyMultiplier: 1.0,
-  onshoreMultiplier: 1.0,
-  triage: 0.25,
-  finalReview: 0.0625,
-  repSample: 10
-};
+// Days added per page for Full Manual Evaluation. Keep small and adjustable.
+const PAGE_DAYS_PER_PAGE = 1; // 1 business day per page
 
-// Holidays (ISO strings). You can optionally create data/holidays.json to override.
-const MANAGER_HOLIDAYS = [
-  '2025-11-27', // Thanksgiving (example)
-  '2025-12-25', // Christmas (example)
-  '2025-12-26'  // Boxing day observed (example)
-];
+// Minimal DOM helper
+const $ = (id) => document.getElementById(id);
 
-// Which services use the page-based (manual) calculation
-const PAGE_BASED_SERVICES = ['Evaluation'];
-
-// For which services should the pages input be visible in the UI?
-// (Per your request, pages are only shown for Full Manual Evaluation)
-const PAGES_VISIBLE_SERVICES = ['Full Manual Evaluation'];
-
-// Default service selected when the page loads (editable)
-const DEFAULT_SELECTED_SERVICE = 'Full Manual Evaluation';
-
-function toggleAdvancedInputs() {
-  const fields = [
-    "pageEffort",
-    "scoping",
-    "triage",
-    "finalReview",
-    "difficultyMultiplier",
-    "onshoreMultiplier"
-  ];
-
-  const button = document.querySelector(
-    'button[onclick="toggleAdvancedInputs()"]'
-  );
-  const isEnabling = button.innerText === "Enable Editing";
-
-  // Toggle fields
-  fields.forEach((id) => {
-    const el = document.getElementById(id);
-    el.disabled = !isEnabling;
-  });
-
-  // Update button text and class
-  button.innerText = isEnabling ? "Disable Editing" : "Enable Editing";
-  button.classList.toggle("editing-enabled", isEnabling);
-
-  calculate(); // Recalculate after toggle
-}
-
-function updateMultipliers() {
-  const complexity = document.getElementById("complexity").value;
-  const onshore = document.getElementById("onshore").value;
-
-  const difficultyMap = {
-    Standard: 1,
-    Difficult: 1.1,
-    Exceptional: 1.3
-  };
-
-  const difficultyInput = document.getElementById("difficultyMultiplier");
-  const onshoreInput = document.getElementById("onshoreMultiplier");
-
-  if (difficultyInput.disabled) {
-    difficultyInput.value = difficultyMap[complexity];
-  }
-
-  if (onshoreInput.disabled) {
-    onshoreInput.value = onshore === "Yes" ? 2 : 1;
-  }
-}
-
-// Load services list from services.json and populate the serviceType select
 async function loadServices() {
-  // Embedded fallback uses `MANAGER_SERVICES` defined at the top of this file.
-
-  const select = document.getElementById('serviceType');
+  const select = $('serviceType');
+  if (!select) return;
   let services = null;
-  let multipliers = null;
   try {
-    // try loading from data/services.json first (matches repository structure)
     const resp = await fetch('data/services.json');
     if (resp.ok) {
       const data = await resp.json();
-      // New schema wraps services and multipliers
-      if (data.services) {
-        services = data.services;
-        multipliers = data.multipliers || null;
-      } else {
-        // backward compatible: array
-        services = data;
-      }
-    } else {
-      // fallback to top-level services.json
-      const resp2 = await fetch('services.json');
-      if (resp2.ok) {
-        const data2 = await resp2.json();
-        if (data2.services) {
-          services = data2.services;
-          multipliers = data2.multipliers || null;
-        } else {
-          services = data2;
-        }
-      }
-    }
-  } catch (err) {
-    // Fetch can fail on file:// pages due to CORS — fall back to embedded data
-    console.log('%cCould not fetch services.json (falling back to embedded data)', 'color: #b45f00; font-weight: 600;', err);
-  }
-
-  if (!services) services = MANAGER_SERVICES;
-  // If the JSON contained multipliers use them, otherwise fall back to manager defaults
-  const GLOBAL_MULTIPLIERS = multipliers || MANAGER_MULTIPLIERS;
-  // Debug: log loaded services and multipliers
-  console.log('Loaded services:', services.map(s => s.Services));
-  console.log('GLOBAL_MULTIPLIERS:', GLOBAL_MULTIPLIERS);
-
-  // Try to load holidays.json (optional). Fall back to manager-configured holidays.
-  let holidays = [];
-  try {
-    const hResp = await fetch('data/holidays.json');
-    if (hResp.ok) {
-      const hData = await hResp.json();
-      if (Array.isArray(hData)) holidays = hData;
+      services = data.services || data;
     }
   } catch (e) {
-    console.log('Could not load data/holidays.json, using manager defaults');
+    // ignore fetch errors (file:// or CORS)
   }
-  if (!holidays || !holidays.length) holidays = MANAGER_HOLIDAYS;
-  // Normalize to a Set of ISO date strings for quick lookup
-  window.GLOBAL_HOLIDAYS = new Set(holidays.map(d => (new Date(d)).toISOString().slice(0,10)));
-  console.log('Holidays loaded:', Array.from(window.GLOBAL_HOLIDAYS));
+  if (!services) services = DEFAULT_SERVICES;
 
+  // Populate select
+  select.innerHTML = '';
   services.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.Services;
@@ -170,48 +47,376 @@ async function loadServices() {
     select.appendChild(opt);
   });
 
-  // Default selection from manager config
-  if (select.querySelector(`option[value="${DEFAULT_SELECTED_SERVICE}"]`)) {
-    select.value = DEFAULT_SELECTED_SERVICE;
+  // Default to Full Manual Evaluation if available
+  if (select.querySelector('option[value="Full Manual Evaluation"]')) {
+    select.value = 'Full Manual Evaluation';
   }
 
   select.addEventListener('change', () => {
-    // Show/hide inputs depending on service selection
-    const val = select.value;
-    const advanced = document.querySelector('.advanced-inputs');
-  // Pages visibility and page-based service list are manager-configurable
-  const isManual = PAGE_BASED_SERVICES.includes(val);
-    const isPagesVisible = PAGES_VISIBLE_SERVICES.includes(val);
-  console.log('Service changed to:', val, '| isManual:', isManual);
+    applyPagesVisibility();
+    calculate();
+  });
+}
 
-    // Always keep Service Ticket Created Date visible
-    const startLabel = document.querySelector('label[for="startDate"]');
-    const startInput = document.getElementById('startDate');
-    const startHint = document.getElementById('startDateHint');
-    if (startLabel) startLabel.style.display = '';
-    if (startInput) startInput.style.display = '';
-    if (startHint) startHint.style.display = '';
-
-  // Page count visibility is driven by manager config
+function applyPagesVisibility() {
+  const select = $('serviceType');
   const pagesLabel = document.querySelector('label[for="pages"]');
-  const pagesInput = document.getElementById('pages');
-  if (pagesLabel) pagesLabel.style.display = isPagesVisible ? '' : 'none';
-  if (pagesInput) pagesInput.style.display = isPagesVisible ? '' : 'none';
+  const pagesInput = $('pages');
+  const show = select && select.value === 'Full Manual Evaluation';
+  if (pagesLabel) pagesLabel.style.display = show ? '' : 'none';
+  if (pagesInput) pagesInput.style.display = show ? '' : 'none';
+}
 
-    // Complexity/onshore/vpat should be hidden for all services per new requirement
-    ['complexity', 'onshore', 'vpat'].forEach(id => {
-      const lab = document.querySelector(`label[for="${id}"]`);
-      const inp = document.getElementById(id);
-      if (lab) lab.style.display = 'none';
-      if (inp) inp.style.display = 'none';
+function calculate() {
+  const select = $('serviceType');
+  const resultsList = $('resultsList');
+  if (!resultsList || !select) return;
+  resultsList.innerHTML = '';
+
+  const opt = select.selectedOptions[0];
+  const attc = parseFloat(opt?.dataset?.attc) || 0;
+  const buffer = parseFloat(opt?.dataset?.buffer) || 0;
+
+  let total = attc + buffer;
+  if (select.value === 'Full Manual Evaluation') {
+    const pages = parseFloat($('pages')?.value) || 0;
+    total += pages * PAGE_DAYS_PER_PAGE;
+  }
+
+  // Delivery date (business days only, skip weekends)
+  const startVal = $('startDate')?.value;
+  if (startVal) {
+    const start = new Date(startVal);
+    const delivery = addBusinessDays(start, Math.round(total));
+    const dt = document.createElement('dt');
+    dt.textContent = 'Estimated Delivery Date:';
+    const dd = document.createElement('dd');
+    dd.textContent = delivery.toLocaleDateString();
+    resultsList.appendChild(dt);
+    resultsList.appendChild(dd);
+  }
+
+  const dt2 = document.createElement('dt');
+  dt2.textContent = 'Estimated Total Timeline:';
+  const dd2 = document.createElement('dd');
+  dd2.textContent = `${total.toFixed(1)} Business Days`;
+  resultsList.appendChild(dt2);
+  resultsList.appendChild(dd2);
+}
+
+function addBusinessDays(date, days) {
+  const result = new Date(date);
+  if (!Number.isFinite(days) || days === 0) return result;
+  const dir = days > 0 ? 1 : -1;
+  let remaining = Math.abs(days);
+  while (remaining > 0) {
+    result.setDate(result.getDate() + dir);
+    const d = result.getDay();
+    if (d === 0 || d === 6) continue; // skip weekends
+    remaining--;
+  }
+  return result;
+}
+
+// Hook up inputs
+['serviceType', 'pages', 'startDate'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('input', calculate);
+});
+
+// Default start date to today if empty
+const startInputEl = $('startDate');
+if (startInputEl && !startInputEl.value) startInputEl.value = new Date().toISOString().slice(0,10);
+
+// Initialize
+loadServices().then(() => {
+  applyPagesVisibility();
+  calculate();
+});
+/*
+  Minimal calculator (simplified / dumbed-down)
+  - Uses ATTC + Buffer for all services except
+    'Full Manual Evaluation' which adds pages-based days.
+  - Shows the pages input only for 'Full Manual Evaluation'.
+  - Computes Estimated Delivery Date by adding business days (skips weekends).
+  - Keeps the script intentionally small and easy to read.
+*/
+
+// Simple manager-editable defaults (used if fetch fails)
+const DEFAULT_SERVICES = [
+  { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
+  { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
+  { Services: 'Validation', ATTC: 12, Buffer: 10 },
+  { Services: 'Live Consultation', ATTC: 15, Buffer: 10 }
+];
+
+// Days added per page for Full Manual Evaluation. Keep small and adjustable.
+const PAGE_DAYS_PER_PAGE = 1; // 1 business day per page
+
+// Minimal DOM helper
+const $ = (id) => document.getElementById(id);
+
+async function loadServices() {
+  const select = $('serviceType');
+  if (!select) return;
+  let services = null;
+  try {
+    const resp = await fetch('data/services.json');
+    if (resp.ok) {
+      const data = await resp.json();
+      services = data.services || data;
+    }
+  } catch (e) {
+    // ignore fetch errors (file:// or CORS)
+  }
+  if (!services) services = DEFAULT_SERVICES;
+
+  // Populate select
+  select.innerHTML = '';
+  services.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.Services;
+    opt.textContent = s.Services;
+    opt.dataset.attc = s.ATTC;
+    opt.dataset.buffer = s.Buffer;
+    select.appendChild(opt);
+  });
+
+  // Default to Full Manual Evaluation if available
+  if (select.querySelector('option[value="Full Manual Evaluation"]')) {
+    select.value = 'Full Manual Evaluation';
+  }
+
+  select.addEventListener('change', () => {
+    applyPagesVisibility();
+    calculate();
+  });
+}
+
+function applyPagesVisibility() {
+  const select = $('serviceType');
+  const pagesLabel = document.querySelector('label[for="pages"]');
+  const pagesInput = $('pages');
+  const show = select && select.value === 'Full Manual Evaluation';
+  if (pagesLabel) pagesLabel.style.display = show ? '' : 'none';
+  if (pagesInput) pagesInput.style.display = show ? '' : 'none';
+}
+
+function calculate() {
+  const select = $('serviceType');
+  const resultsList = $('resultsList');
+  if (!resultsList || !select) return;
+  resultsList.innerHTML = '';
+
+  const opt = select.selectedOptions[0];
+  const attc = parseFloat(opt?.dataset?.attc) || 0;
+  const buffer = parseFloat(opt?.dataset?.buffer) || 0;
+
+  let total = attc + buffer;
+  if (select.value === 'Full Manual Evaluation') {
+    const pages = parseFloat($('pages')?.value) || 0;
+    total += pages * PAGE_DAYS_PER_PAGE;
+  }
+
+  // Delivery date (business days only, skip weekends)
+  const startVal = $('startDate')?.value;
+  if (startVal) {
+    const start = new Date(startVal);
+    const delivery = addBusinessDays(start, Math.round(total));
+    const dt = document.createElement('dt');
+    dt.textContent = 'Estimated Delivery Date:';
+    const dd = document.createElement('dd');
+    dd.textContent = delivery.toLocaleDateString();
+    resultsList.appendChild(dt);
+    resultsList.appendChild(dd);
+  }
+
+  const dt2 = document.createElement('dt');
+  dt2.textContent = 'Estimated Total Timeline:';
+  const dd2 = document.createElement('dd');
+  dd2.textContent = `${total.toFixed(1)} Business Days`;
+  resultsList.appendChild(dt2);
+  resultsList.appendChild(dd2);
+}
+
+function addBusinessDays(date, days) {
+  const result = new Date(date);
+  if (!Number.isFinite(days) || days === 0) return result;
+  const dir = days > 0 ? 1 : -1;
+  let remaining = Math.abs(days);
+  while (remaining > 0) {
+    result.setDate(result.getDate() + dir);
+    const d = result.getDay();
+    if (d === 0 || d === 6) continue; // skip weekends
+    remaining--;
+  }
+  return result;
+}
+
+// Hook up inputs
+['serviceType', 'pages', 'startDate'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('input', calculate);
+});
+
+// Default start date to today if empty
+const startInputEl = $('startDate');
+if (startInputEl && !startInputEl.value) startInputEl.value = new Date().toISOString().slice(0,10);
+
+// Initialize
+loadServices().then(() => {
+  applyPagesVisibility();
+  calculate();
+});
+/*
+  Minimal calculator (simplified / dumbed-down)
+  - Uses ATTC + Buffer for all services except
+    'Full Manual Evaluation' which adds pages-based days.
+  - Shows the pages input only for 'Full Manual Evaluation'.
+  - Computes Estimated Delivery Date by adding business days (skips weekends).
+  - Keeps the script intentionally small and easy to read.
+*/
+
+// Simple manager-editable defaults (used if fetch fails)
+const DEFAULT_SERVICES = [
+  { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
+  /*
+    Minimal calculator (simplified / dumbed-down)
+    - Uses ATTC + Buffer for all services except
+      'Full Manual Evaluation' which adds pages-based days.
+    - Shows the pages input only for 'Full Manual Evaluation'.
+    - Computes Estimated Delivery Date by adding business days (skips weekends).
+    - Keeps the script intentionally small and easy to read.
+  */
+
+  // Simple manager-editable defaults (used if fetch fails)
+  const DEFAULT_SERVICES = [
+    { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
+    { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
+    { Services: 'Validation', ATTC: 12, Buffer: 10 },
+    { Services: 'Live Consultation', ATTC: 15, Buffer: 10 }
+  ];
+
+  // Days added per page for Full Manual Evaluation. Keep small and adjustable.
+  const PAGE_DAYS_PER_PAGE = 1; // 1 business day per page
+
+  // Minimal DOM helpers
+  const $ = (id) => document.getElementById(id);
+
+  async function loadServices() {
+    const select = $('serviceType');
+    let services = null;
+    try {
+      const resp = await fetch('data/services.json');
+      if (resp.ok) {
+        const data = await resp.json();
+        services = data.services || data;
+      }
+    } catch (e) {
+      // ignore fetch errors (file:// or CORS)
+    }
+    if (!services) services = DEFAULT_SERVICES;
+
+    // Populate select
+    select.innerHTML = '';
+    services.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.Services;
+      opt.textContent = s.Services;
+      opt.dataset.attc = s.ATTC;
+      opt.dataset.buffer = s.Buffer;
+      select.appendChild(opt);
     });
 
-    // Findings count only for Validation (non-manual)
-    const findingsLabel = document.querySelector('label[for="findingsCount"]');
-    const findingsInput = document.getElementById('findingsCount');
-    if (findingsLabel && findingsInput) {
-      if (val === 'Validation') {
-        findingsLabel.style.display = '';
+    // Set a sensible default if present
+    if (select.querySelector('option[value="Full Manual Evaluation"]')) {
+      select.value = 'Full Manual Evaluation';
+    }
+
+    // Apply initial visibility and calculation
+    select.addEventListener('change', () => {
+      applyPagesVisibility();
+      calculate();
+    });
+  }
+
+  function applyPagesVisibility() {
+    const select = $('serviceType');
+    const pagesLabel = document.querySelector('label[for="pages"]');
+    const pagesInput = $('pages');
+    const show = select && select.value === 'Full Manual Evaluation';
+    if (pagesLabel) pagesLabel.style.display = show ? '' : 'none';
+    if (pagesInput) pagesInput.style.display = show ? '' : 'none';
+  }
+
+  function calculate() {
+    const select = $('serviceType');
+    const resultsList = $('resultsList');
+    if (!resultsList) return;
+    resultsList.innerHTML = '';
+    if (!select) return;
+
+    const opt = select.selectedOptions[0];
+    const attc = parseFloat(opt?.dataset?.attc) || 0;
+    const buffer = parseFloat(opt?.dataset?.buffer) || 0;
+
+    let total = attc + buffer;
+    if (select.value === 'Full Manual Evaluation') {
+      const pages = parseFloat($('pages')?.value) || 0;
+      total += pages * PAGE_DAYS_PER_PAGE;
+    }
+
+    // Delivery date (business days only, skip weekends)
+    const startVal = $('startDate')?.value;
+    if (startVal) {
+      const start = new Date(startVal);
+      const delivery = addBusinessDays(start, Math.round(total));
+      const dt = document.createElement('dt');
+      dt.textContent = 'Estimated Delivery Date:';
+      const dd = document.createElement('dd');
+      dd.textContent = delivery.toLocaleDateString();
+      resultsList.appendChild(dt);
+      resultsList.appendChild(dd);
+    }
+
+    const dt2 = document.createElement('dt');
+    dt2.textContent = 'Estimated Total Timeline:';
+    const dd2 = document.createElement('dd');
+    dd2.textContent = `${total.toFixed(1)} Business Days`;
+    resultsList.appendChild(dt2);
+    resultsList.appendChild(dd2);
+  }
+
+  function addBusinessDays(date, days) {
+    const result = new Date(date);
+    if (!Number.isFinite(days) || days === 0) return result;
+    const dir = days > 0 ? 1 : -1;
+    let remaining = Math.abs(days);
+    while (remaining > 0) {
+      result.setDate(result.getDate() + dir);
+      const d = result.getDay();
+      if (d === 0 || d === 6) continue; // skip weekends
+      remaining--;
+    }
+    return result;
+  }
+
+  // Hook up inputs
+  ['serviceType', 'pages', 'startDate'].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('input', calculate);
+  });
+
+  // Default start date to today if empty
+  const startInputEl = $('startDate');
+  if (startInputEl && !startInputEl.value) startInputEl.value = new Date().toISOString().slice(0,10);
+
+  // Initialize
+  loadServices().then(() => {
+    applyPagesVisibility();
+    calculate();
+  });
+
         findingsInput.style.display = '';
       } else {
         findingsLabel.style.display = 'none';
