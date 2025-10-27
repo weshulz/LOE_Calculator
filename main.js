@@ -1,3 +1,59 @@
+/*
+  MANAGER CONFIGURATION
+  ---------------------
+  This top section groups values a manager or product owner may edit without
+  digging through the implementation below. Edit these values to change the
+  app behavior. Keep the shapes consistent: services array entries must include
+  "Services", "ATTC", and "Buffer". Holidays should be ISO date strings
+  (YYYY-MM-DD). Multipliers represent numeric values used by the calculator.
+
+  NOTE: When serving locally via file:// the app falls back to these embedded
+  defaults. When served over HTTP the `data/services.json` and optionally
+  `data/holidays.json` will be used instead.
+*/
+
+// Services: list of service types with ATTC and Buffer (editable)
+const MANAGER_SERVICES = [
+  { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
+  { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
+  { Services: 'Internal: VPAT representative sample', ATTC: 34.71, Buffer: 10 },
+  { Services: 'Live Consultation', ATTC: 15, Buffer: 10 },
+  { Services: 'Technical Question', ATTC: 13, Buffer: 10 },
+  { Services: 'Validation', ATTC: 12, Buffer: 10 },
+  { Services: 'VPAT', ATTC: 24, Buffer: 10 },
+  { Services: 'VPAT Update', ATTC: 24, Buffer: 10 },
+  { Services: 'Demand Review', ATTC: 10, Buffer: 10 },
+  { Services: 'Design Evaluation', ATTC: 33, Buffer: 10 }
+];
+
+// Multipliers and small constants managers may adjust
+const MANAGER_MULTIPLIERS = {
+  scoping: 1.2,
+  pageEffort: 0.5625,
+  difficultyMultiplier: 1.0,
+  onshoreMultiplier: 1.0,
+  triage: 0.25,
+  finalReview: 0.0625,
+  repSample: 10
+};
+
+// Holidays (ISO strings). You can optionally create data/holidays.json to override.
+const MANAGER_HOLIDAYS = [
+  '2025-11-27', // Thanksgiving (example)
+  '2025-12-25', // Christmas
+  '2025-12-26'  // Boxing day observed
+];
+
+// Which services use the page-based (manual) calculation
+const PAGE_BASED_SERVICES = ['Evaluation'];
+
+// For which services should the pages input be visible in the UI?
+// (Per your request, pages are only shown for Full Manual Evaluation)
+const PAGES_VISIBLE_SERVICES = ['Full Manual Evaluation'];
+
+// Default service selected when the page loads (editable)
+const DEFAULT_SELECTED_SERVICE = 'Full Manual Evaluation';
+
 function toggleAdvancedInputs() {
   const fields = [
     "pageEffort",
@@ -50,19 +106,7 @@ function updateMultipliers() {
 
 // Load services list from services.json and populate the serviceType select
 async function loadServices() {
-  // Embedded fallback for when fetch is blocked (file:// pages) or network fails
-  const defaultServices = [
-    { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
-    { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
-    { Services: 'Internal: VPAT representative sample', ATTC: 34.71, Buffer: 10 },
-    { Services: 'Live Consultation', ATTC: 15, Buffer: 10 },
-    { Services: 'Technical Question', ATTC: 13, Buffer: 10 },
-    { Services: 'Validation', ATTC: 12, Buffer: 10 },
-    { Services: 'VPAT', ATTC: 24, Buffer: 10 },
-    { Services: 'VPAT Update', ATTC: 24, Buffer: 10 },
-    { Services: 'Demand Review', ATTC: 10, Buffer: 10 },
-    { Services: 'Design Evaluation', ATTC: 33, Buffer: 10 }
-  ];
+  // Embedded fallback uses `MANAGER_SERVICES` defined at the top of this file.
 
   const select = document.getElementById('serviceType');
   let services = null;
@@ -98,29 +142,15 @@ async function loadServices() {
     console.log('%cCould not fetch services.json (falling back to embedded data)', 'color: #b45f00; font-weight: 600;', err);
   }
 
-  if (!services) services = defaultServices;
-  // If the JSON contained multipliers use them, otherwise fall back to defaults
-  const GLOBAL_MULTIPLIERS = multipliers || {
-    scoping: 1.2,
-    pageEffort: 0.5625,
-    difficultyMultiplier: 1.0,
-    onshoreMultiplier: 1.0,
-    triage: 0.25,
-    finalReview: 0.0625,
-    repSample: 10
-  };
+  if (!services) services = MANAGER_SERVICES;
+  // If the JSON contained multipliers use them, otherwise fall back to manager defaults
+  const GLOBAL_MULTIPLIERS = multipliers || MANAGER_MULTIPLIERS;
   // Debug: log loaded services and multipliers
   console.log('Loaded services:', services.map(s => s.Services));
   console.log('GLOBAL_MULTIPLIERS:', GLOBAL_MULTIPLIERS);
 
-  // Try to load holidays.json (optional). Fall back to a small embedded list.
+  // Try to load holidays.json (optional). Fall back to manager-configured holidays.
   let holidays = [];
-  const defaultHolidays = [
-    // A small sample of US federal-style holidays for the rest of 2025
-    '2025-11-27', // Thanksgiving (example)
-    '2025-12-25', // Christmas
-    '2025-12-26'  // Boxing day observed
-  ];
   try {
     const hResp = await fetch('data/holidays.json');
     if (hResp.ok) {
@@ -128,9 +158,9 @@ async function loadServices() {
       if (Array.isArray(hData)) holidays = hData;
     }
   } catch (e) {
-    console.log('Could not load data/holidays.json, using embedded defaults');
+    console.log('Could not load data/holidays.json, using manager defaults');
   }
-  if (!holidays || !holidays.length) holidays = defaultHolidays;
+  if (!holidays || !holidays.length) holidays = MANAGER_HOLIDAYS;
   // Normalize to a Set of ISO date strings for quick lookup
   window.GLOBAL_HOLIDAYS = new Set(holidays.map(d => (new Date(d)).toISOString().slice(0,10)));
   console.log('Holidays loaded:', Array.from(window.GLOBAL_HOLIDAYS));
@@ -144,17 +174,18 @@ async function loadServices() {
     select.appendChild(opt);
   });
 
-  // Default to Full Manual Evaluation (manual) so existing fields are used
-  if (select.querySelector('option[value="Full Manual Evaluation"]')) {
-    select.value = 'Full Manual Evaluation';
+  // Default selection from manager config
+  if (select.querySelector(`option[value="${DEFAULT_SELECTED_SERVICE}"]`)) {
+    select.value = DEFAULT_SELECTED_SERVICE;
   }
 
   select.addEventListener('change', () => {
     // Show/hide inputs depending on service selection
     const val = select.value;
     const advanced = document.querySelector('.advanced-inputs');
-     const manualNames = ['Evaluation', 'Full Manual Evaluation'];
-    const isManual = manualNames.includes(val);
+  // Pages visibility and page-based service list are manager-configurable
+  const isManual = PAGE_BASED_SERVICES.includes(val);
+    const isPagesVisible = PAGES_VISIBLE_SERVICES.includes(val);
   console.log('Service changed to:', val, '| isManual:', isManual);
 
     // Always keep Service Ticket Created Date visible
@@ -165,12 +196,11 @@ async function loadServices() {
     if (startInput) startInput.style.display = '';
     if (startHint) startHint.style.display = '';
 
-  // Page count should only be visible for Full Manual Evaluation
+  // Page count visibility is driven by manager config
   const pagesLabel = document.querySelector('label[for="pages"]');
   const pagesInput = document.getElementById('pages');
-  const showPages = val === 'Full Manual Evaluation';
-  if (pagesLabel) pagesLabel.style.display = showPages ? '' : 'none';
-  if (pagesInput) pagesInput.style.display = showPages ? '' : 'none';
+  if (pagesLabel) pagesLabel.style.display = isPagesVisible ? '' : 'none';
+  if (pagesInput) pagesInput.style.display = isPagesVisible ? '' : 'none';
 
     // Complexity/onshore/vpat should be hidden for all services per new requirement
     ['complexity', 'onshore', 'vpat'].forEach(id => {
@@ -242,8 +272,8 @@ function calculate() {
   console.log('Testing Timeline: ', testingTimeline.toFixed(2));
   if (testingTimeline < 10) testingTimeline = 10;
 
-  // Determine timeline by service type — only Evaluation is manual here
-  const manualNames = ['Evaluation'];
+  // Determine timeline by service type — configurable via PAGE_BASED_SERVICES
+  const manualNames = PAGE_BASED_SERVICES;
   let totalTimeline = 0;
 
   if (selectedOption) {
