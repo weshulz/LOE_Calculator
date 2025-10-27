@@ -95,7 +95,7 @@ async function loadServices() {
     }
   } catch (err) {
     // Fetch can fail on file:// pages due to CORS — fall back to embedded data
-    console.warn('Could not fetch services.json (falling back to embedded data)', err);
+    console.log('%cCould not fetch services.json (falling back to embedded data)', 'color: #b45f00; font-weight: 600;', err);
   }
 
   if (!services) services = defaultServices;
@@ -109,6 +109,31 @@ async function loadServices() {
     finalReview: 0.0625,
     repSample: 10
   };
+  // Debug: log loaded services and multipliers
+  console.log('Loaded services:', services.map(s => s.Services));
+  console.log('GLOBAL_MULTIPLIERS:', GLOBAL_MULTIPLIERS);
+
+  // Try to load holidays.json (optional). Fall back to a small embedded list.
+  let holidays = [];
+  const defaultHolidays = [
+    // A small sample of US federal-style holidays for the rest of 2025
+    '2025-11-27', // Thanksgiving (example)
+    '2025-12-25', // Christmas
+    '2025-12-26'  // Boxing day observed
+  ];
+  try {
+    const hResp = await fetch('data/holidays.json');
+    if (hResp.ok) {
+      const hData = await hResp.json();
+      if (Array.isArray(hData)) holidays = hData;
+    }
+  } catch (e) {
+    console.log('Could not load data/holidays.json, using embedded defaults');
+  }
+  if (!holidays || !holidays.length) holidays = defaultHolidays;
+  // Normalize to a Set of ISO date strings for quick lookup
+  window.GLOBAL_HOLIDAYS = new Set(holidays.map(d => (new Date(d)).toISOString().slice(0,10)));
+  console.log('Holidays loaded:', Array.from(window.GLOBAL_HOLIDAYS));
 
   services.forEach(s => {
     const opt = document.createElement('option');
@@ -128,8 +153,9 @@ async function loadServices() {
     // Show/hide inputs depending on service selection
     const val = select.value;
     const advanced = document.querySelector('.advanced-inputs');
-    const manualNames = ['Full Manual Evaluation', 'Evaluation'];
+     const manualNames = ['Evaluation', 'Full Manual Evaluation'];
     const isManual = manualNames.includes(val);
+  console.log('Service changed to:', val, '| isManual:', isManual);
 
     // Always keep Service Ticket Created Date visible
     const startLabel = document.querySelector('label[for="startDate"]');
@@ -139,11 +165,12 @@ async function loadServices() {
     if (startInput) startInput.style.display = '';
     if (startHint) startHint.style.display = '';
 
-    // Page count should only be visible for manual services
-    const pagesLabel = document.querySelector('label[for="pages"]');
-    const pagesInput = document.getElementById('pages');
-    if (pagesLabel) pagesLabel.style.display = isManual ? '' : 'none';
-    if (pagesInput) pagesInput.style.display = isManual ? '' : 'none';
+  // Page count should only be visible for Full Manual Evaluation
+  const pagesLabel = document.querySelector('label[for="pages"]');
+  const pagesInput = document.getElementById('pages');
+  const showPages = val === 'Full Manual Evaluation';
+  if (pagesLabel) pagesLabel.style.display = showPages ? '' : 'none';
+  if (pagesInput) pagesInput.style.display = showPages ? '' : 'none';
 
     // Complexity/onshore/vpat should be hidden for all services per new requirement
     ['complexity', 'onshore', 'vpat'].forEach(id => {
@@ -169,6 +196,8 @@ async function loadServices() {
     // Always hide advanced settings (kept in DOM)
     if (advanced) advanced.style.display = 'none';
 
+    // Quick visibility debug
+    console.log('Visibility -> startDate: shown, pages:', isManual, 'findings:', val === 'Validation');
     calculate();
   });
   // Run the change handler once so the default selection visibility is applied
@@ -182,11 +211,10 @@ async function loadServices() {
 function calculate() {
   updateMultipliers();
 
-  // If a non-manual service is selected, prefer the ATTC + Buffer as the timeline
+  // If a service is selected, get its option and name
   const serviceSelect = document.getElementById('serviceType');
   const selectedOption = serviceSelect?.selectedOptions[0];
   const selectedService = selectedOption?.value;
-  const isManual = !selectedService || ['Full Manual Evaluation', 'Evaluation'].includes(selectedService);
 
   const pages = parseFloat(document.getElementById("pages").value) || 0;
   // Populate inputs from GLOBAL_MULTIPLIERS where available so hidden fields get proper values
@@ -214,52 +242,74 @@ function calculate() {
   console.log('Testing Timeline: ', testingTimeline.toFixed(2));
   if (testingTimeline < 10) testingTimeline = 10;
 
-  let totalTimeline = scoping + testingTimeline;
+  // Determine timeline by service type — only Evaluation is manual here
+  const manualNames = ['Evaluation'];
+  let totalTimeline = 0;
 
-  // Special-case Full Manual Evaluation: use combined Eval ATTC formula
-  if (selectedOption && selectedOption.value === 'Full Manual Evaluation') {
-    const mult = window.GLOBAL_MULTIPLIERS || {};
-    const attc = parseFloat(selectedOption.dataset.attc) || 0;
-    const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
-    const repSample = parseFloat(mult.repSample) || 10;
-    const pagesCount = parseFloat(document.getElementById('pages').value) || 0;
-    const pageEff = parseFloat(mult.pageEffort) || 1.5;
-    const finalRev = parseFloat(mult.finalReview) || 0.5;
+  if (selectedOption) {
+    const svc = selectedOption.value;
 
-    // totalTimeline = Eval ATTC + Eval buffer + repSample + pages*finalReview + pages*pageEffort
-    console.log('attc: ', attc, '| buf: ', buffer, '| repSamp: ', repSample, '| page count: ', pagesCount, '| finalrev: ', finalRev, '| pageEff: ', pageEff);
-    totalTimeline = attc + buffer + repSample + (pagesCount * finalRev) + (pagesCount * pageEff);
-  } else if (!isManual && selectedOption) {
-    let attc = parseFloat(selectedOption.dataset.attc) || 0;
-    const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
+     // Full Manual Evaluation: ATTC + Buffer + repSample + pages*finalReview + pages*pageEffort
+     if (svc === 'Full Manual Evaluation') {
+       // Components: ATTC + Buffer + Scoping + (pageEffort * pages) + triage + (finalReview * pages)
+       const mult = window.GLOBAL_MULTIPLIERS || {};
+       const attc = parseFloat(selectedOption.dataset.attc) || 0;
+       const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
+       const pagesCount = parseFloat(document.getElementById('pages').value) || 0;
+       const pageEff = parseFloat(mult.pageEffort ?? document.getElementById('pageEffort').value) || 0;
+       const finalRev = parseFloat(mult.finalReview ?? document.getElementById('finalReview').value) || 0;
+       const scopingVal = parseFloat(mult.scoping ?? document.getElementById('scoping').value) || 0;
+       const triageVal = parseFloat(mult.triage ?? document.getElementById('triage').value) || 0;
 
-    // If Validation, add findings-based days: 1 day per 20 findings
-    if (selectedOption.value === 'Validation') {
-      const findings = parseInt(document.getElementById('findingsCount').value) || 0;
-      const extra = Math.floor(findings / 20);
-      attc += extra;
+       const pagesEffort = pagesCount * pageEff;
+       const pagesReview = pagesCount * finalRev;
+
+       console.log('Full Manual components -> attc:', attc, 'buffer:', buffer, 'scoping:', scopingVal, 'pageEffort*pages:', pagesEffort, 'triage:', triageVal, 'finalReview*pages:', pagesReview);
+
+       totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;
+     } else if (manualNames.includes(svc)) {
+       // Manual (Evaluation) uses the page-based calculation
+       totalTimeline = scoping + testingTimeline;
+
+    } else {
+      // Non-manual services use ATTC + Buffer
+      let attc = parseFloat(selectedOption.dataset.attc) || 0;
+      const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
+
+      // If Validation, add findings-based days: 1 day per 20 findings
+      if (svc === 'Validation') {
+        const findings = parseInt(document.getElementById('findingsCount').value) || 0;
+        const extra = Math.floor(findings / 20);
+        attc += extra;
+      }
+
+      console.log('ATTC: ', attc, '| Buffer: ', buffer);
+      totalTimeline = attc + buffer;
     }
 
-    console.log('ATTC: ', attc, '| Buffer: ', buffer);
-    totalTimeline = attc + buffer;
+  } else {
+    // No service selected: default to manual page-based calculation
+    totalTimeline = scoping + testingTimeline;
   }
+
+  // Safety: ensure totalTimeline is a finite number
+  if (!Number.isFinite(totalTimeline)) {
+    console.log('%cComputed totalTimeline is not a finite number, defaulting to 0', 'color: #b45f00; font-weight: 600;', totalTimeline);
+    totalTimeline = 0;
+  }
+
+  console.log('Service:', selectedOption ? selectedOption.value : 'none', '| totalTimeline:', totalTimeline);
 
   const resultsList = document.getElementById("resultsList");
   // Clear previous results
   resultsList.innerHTML = "";
 
-  // Estimated Total Timeline
-  const dtTimeline = document.createElement("dt");
-  dtTimeline.textContent = "Estimated Total Timeline:";
-  const ddTimeline = document.createElement("dd");
-  ddTimeline.innerHTML = `<span>${totalTimeline.toFixed(1)} Business Days</span>`;
-  resultsList.appendChild(dtTimeline);
-
-  // Compute Estimated Delivery Date if a start date is provided
+  // Compute Estimated Delivery Date if a start date is provided — render delivery first
   const startDateValue = document.getElementById("startDate").value;
+  let delivery = null;
   if (startDateValue) {
     const start = new Date(startDateValue);
-    const delivery = addBusinessDays(start, Math.round(totalTimeline));
+    delivery = addBusinessDays(start, Math.round(totalTimeline));
     console.log('Start Date: ', start.toLocaleDateString(), '| Delivery Date: ', delivery.toLocaleDateString());
     const dtDelivery = document.createElement("dt");
     dtDelivery.textContent = "Estimated Delivery Date:";
@@ -268,6 +318,16 @@ function calculate() {
     resultsList.appendChild(dtDelivery);
     resultsList.appendChild(ddDelivery);
   }
+
+  // Estimated Total Timeline (always shown)
+  const dtTimeline = document.createElement("dt");
+  dtTimeline.textContent = "Estimated Total Timeline:";
+  const ddTimeline = document.createElement("dd");
+  ddTimeline.innerHTML = `<span>${totalTimeline.toFixed(1)} Business Days</span>`;
+  resultsList.appendChild(dtTimeline);
+  resultsList.appendChild(ddTimeline);
+
+  console.log('Total timeline (days):', totalTimeline, delivery ? '| delivery: ' + delivery.toLocaleDateString() : '');
 }
 
 // Adds or subtracts n business days to a given date (skips weekends)
@@ -282,7 +342,16 @@ function addBusinessDays(date, days) {
   while (remaining > 0) {
     result.setDate(result.getDate() + direction);
     const day = result.getDay();
-    if (day !== 0 && day !== 6) remaining--;
+    // Skip weekends
+    if (day === 0 || day === 6) continue;
+    // Skip holidays (ISO date string in GLOBAL_HOLIDAYS)
+    try {
+      const iso = result.toISOString().slice(0,10);
+      if (window.GLOBAL_HOLIDAYS && window.GLOBAL_HOLIDAYS.has(iso)) continue;
+    } catch (e) {
+      // ignore toISOString errors
+    }
+    remaining--;
   }
 
   return result;
