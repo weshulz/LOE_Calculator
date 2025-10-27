@@ -13,12 +13,12 @@ const MANAGER_SERVICES = [
   { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
   { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
   { Services: 'Internal: VPAT representative sample', ATTC: 34.71, Buffer: 10 },
-  { Services: 'Live Consultation', ATTC: 15, Buffer: 10 },
-  { Services: 'Technical Question', ATTC: 13, Buffer: 10 },
-  { Services: 'Validation', ATTC: 12, Buffer: 10 },
+  { Services: 'Live Consultation', ATTC: 5, Buffer: 5 },
+  { Services: 'Technical Question', ATTC: 10, Buffer: 3 },
+  { Services: 'Validation', ATTC: 12, Buffer: 5 },
   { Services: 'VPAT', ATTC: 24, Buffer: 10 },
   { Services: 'VPAT Update', ATTC: 24, Buffer: 10 },
-  { Services: 'Demand Review', ATTC: 10, Buffer: 10 },
+  { Services: 'Demand Review', ATTC: 10, Buffer: 5 },
   { Services: 'Design Evaluation', ATTC: 33, Buffer: 10 }
 ];
 
@@ -41,15 +41,13 @@ const MANAGER_HOLIDAYS = [
 ];
 
 // Which services use the page-based (manual) calculation
-const PAGE_BASED_SERVICES = ['Evaluation'];
-
-// For which services should the pages input be visible in the UI?
-// (Per your request, pages are only shown for Full Manual Evaluation)
+const PAGE_BASED_SERVICES = ['Full Manual Evaluation'];
 const PAGES_VISIBLE_SERVICES = ['Full Manual Evaluation'];
 
 // Default service selected when the page loads (editable)
 const DEFAULT_SELECTED_SERVICE = 'Full Manual Evaluation';
 
+// This function is a deprecated feature, remove soon
 function toggleAdvancedInputs() {
   const fields = [
     "pageEffort",
@@ -78,6 +76,7 @@ function toggleAdvancedInputs() {
   calculate(); // Recalculate after toggle
 }
 
+// This function is also deprecated feature, remove soon
 function updateMultipliers() {
   const complexity = document.getElementById("complexity").value;
   const onshore = document.getElementById("onshore").value;
@@ -135,15 +134,15 @@ async function loadServices() {
     }
   } catch (err) {
     // Fetch can fail on file:// pages due to CORS — fall back to embedded data
-    console.log('%cCould not fetch services.json (falling back to embedded data)', 'color: #b45f00; font-weight: 600;', err);
+    // console.warn('%cCould not fetch services.json (falling back to embedded data)', 'color: #b45f00; font-weight: 600;', err);
   }
 
   if (!services) services = MANAGER_SERVICES;
   // If the JSON contained multipliers use them, otherwise fall back to manager defaults
   const GLOBAL_MULTIPLIERS = multipliers || MANAGER_MULTIPLIERS;
   // Debug: log loaded services and multipliers
-  console.log('Loaded services:', services.map(s => s.Services));
-  console.log('GLOBAL_MULTIPLIERS:', GLOBAL_MULTIPLIERS);
+  // console.log('Loaded services:', services.map(s => s.Services));
+  // console.log('GLOBAL_MULTIPLIERS:', GLOBAL_MULTIPLIERS);
 
   // Try to load holidays.json (optional). Fall back to manager-configured holidays.
   let holidays = [];
@@ -154,12 +153,12 @@ async function loadServices() {
       if (Array.isArray(hData)) holidays = hData;
     }
   } catch (e) {
-    console.log('Could not load data/holidays.json, using manager defaults');
+    // console.log('Could not load data/holidays.json, using manager defaults');
   }
   if (!holidays || !holidays.length) holidays = MANAGER_HOLIDAYS;
   // Normalize to a Set of ISO date strings for quick lookup
-  window.GLOBAL_HOLIDAYS = new Set(holidays.map(d => (new Date(d)).toISOString().slice(0,10)));
-  console.log('Holidays loaded:', Array.from(window.GLOBAL_HOLIDAYS));
+  window.GLOBAL_HOLIDAYS = new Set(holidays.map(d => (new Date(d)).toISOString().slice(0, 10)));
+  // console.log('Holidays loaded:', Array.from(window.GLOBAL_HOLIDAYS));
 
   services.forEach(s => {
     const opt = document.createElement('option');
@@ -179,10 +178,10 @@ async function loadServices() {
     // Show/hide inputs depending on service selection
     const val = select.value;
     const advanced = document.querySelector('.advanced-inputs');
-  // Pages visibility and page-based service list are manager-configurable
-  const isManual = PAGE_BASED_SERVICES.includes(val);
+    // Pages visibility and page-based service list are manager-configurable
+    const isManual = PAGE_BASED_SERVICES.includes(val);
     const isPagesVisible = PAGES_VISIBLE_SERVICES.includes(val);
-  console.log('Service changed to:', val, '| isManual:', isManual);
+    // console.log('Service changed to:', val, '| isManual:', isManual);
 
     // Always keep Service Ticket Created Date visible
     const startLabel = document.querySelector('label[for="startDate"]');
@@ -192,11 +191,11 @@ async function loadServices() {
     if (startInput) startInput.style.display = '';
     if (startHint) startHint.style.display = '';
 
-  // Page count visibility is driven by manager config
-  const pagesLabel = document.querySelector('label[for="pages"]');
-  const pagesInput = document.getElementById('pages');
-  if (pagesLabel) pagesLabel.style.display = isPagesVisible ? '' : 'none';
-  if (pagesInput) pagesInput.style.display = isPagesVisible ? '' : 'none';
+    // Page count visibility is driven by manager config
+    const pagesLabel = document.querySelector('label[for="pages"]');
+    const pagesInput = document.getElementById('pages');
+    if (pagesLabel) pagesLabel.style.display = isPagesVisible ? '' : 'none';
+    if (pagesInput) pagesInput.style.display = isPagesVisible ? '' : 'none';
 
     // Complexity/onshore/vpat should be hidden for all services per new requirement
     ['complexity', 'onshore', 'vpat'].forEach(id => {
@@ -223,7 +222,7 @@ async function loadServices() {
     if (advanced) advanced.style.display = 'none';
 
     // Quick visibility debug
-    console.log('Visibility -> startDate: shown, pages:', isManual, 'findings:', val === 'Validation');
+    // console.log('Visibility -> startDate: shown, pages:', isManual, 'findings:', val === 'Validation');
     calculate();
   });
   // Run the change handler once so the default selection visibility is applied
@@ -235,12 +234,11 @@ async function loadServices() {
 
 
 function calculate() {
-  updateMultipliers();
+  // updateMultipliers();
 
-  // If a service is selected, get its option and name
+  // When a service is selected, get its option and name
   const serviceSelect = document.getElementById('serviceType');
   const selectedOption = serviceSelect?.selectedOptions[0];
-  const selectedService = selectedOption?.value;
 
   const pages = parseFloat(document.getElementById("pages").value) || 0;
   // Populate inputs from GLOBAL_MULTIPLIERS where available so hidden fields get proper values
@@ -262,7 +260,7 @@ function calculate() {
   const reviewEffort =
     ((finalReview * pages) / 8) * difficultyMultiplier * onshoreMultiplier;
 
-  console.log('Base Effort: ', baseEffort.toFixed(2), '| Review Effort: ', reviewEffort.toFixed(2));
+  // console.log('Base Effort: ', baseEffort.toFixed(2), '| Review Effort: ', reviewEffort.toFixed(2));
 
   let testingTimeline = baseEffort + triage + reviewEffort;
   console.log('Testing Timeline: ', testingTimeline.toFixed(2));
@@ -275,30 +273,26 @@ function calculate() {
   if (selectedOption) {
     const svc = selectedOption.value;
 
-     // Full Manual Evaluation: ATTC + Buffer + repSample + pages*finalReview + pages*pageEffort
-     if (svc === 'Full Manual Evaluation') {
-       // Components: ATTC + Buffer + Scoping + (pageEffort * pages) + triage + (finalReview * pages)
-       const mult = window.GLOBAL_MULTIPLIERS || {};
-       const attc = parseFloat(selectedOption.dataset.attc) || 0;
-       const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
-       const pagesCount = parseFloat(document.getElementById('pages').value) || 0;
-       const pageEff = parseFloat(mult.pageEffort ?? document.getElementById('pageEffort').value) || 0;
-       const finalRev = parseFloat(mult.finalReview ?? document.getElementById('finalReview').value) || 0;
-       const scopingVal = parseFloat(mult.scoping ?? document.getElementById('scoping').value) || 0;
-       const triageVal = parseFloat(mult.triage ?? document.getElementById('triage').value) || 0;
+    // Full Manual Evaluation: ATTC + Buffer + repSample + pages*finalReview + pages*pageEffort
+    if (svc === 'Full Manual Evaluation') {
+      // Components: ATTC + Buffer + Scoping + (pageEffort * pages) + triage + (finalReview * pages)
+      const mult = window.GLOBAL_MULTIPLIERS || {};
+      const attc = parseFloat(selectedOption.dataset.attc) || 0;
+      const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
+      const pagesCount = parseFloat(document.getElementById('pages').value) || 0;
+      const pageEff = parseFloat(mult.pageEffort ?? document.getElementById('pageEffort').value) || 0;
+      const finalRev = parseFloat(mult.finalReview ?? document.getElementById('finalReview').value) || 0;
+      const scopingVal = parseFloat(mult.scoping ?? document.getElementById('scoping').value) || 0;
+      const triageVal = parseFloat(mult.triage ?? document.getElementById('triage').value) || 0;
 
-       const pagesEffort = pagesCount * pageEff;
-       const pagesReview = pagesCount * finalRev;
+      const pagesEffort = pagesCount * pageEff;
+      const pagesReview = pagesCount * finalRev;
 
-       console.log('Full Manual components -> attc:', attc, 'buffer:', buffer, 'scoping:', scopingVal, 'pageEffort*pages:', pagesEffort, 'triage:', triageVal, 'finalReview*pages:', pagesReview);
+      // console.log('Full Manual components -> attc:', attc, 'buffer:', buffer, 'scoping:', scopingVal, 'pageEffort*pages:', pagesEffort, 'triage:', triageVal, 'finalReview*pages:', pagesReview);
 
-       totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;
-     } else if (manualNames.includes(svc)) {
-       // Manual (Evaluation) uses the page-based calculation
-       totalTimeline = scoping + testingTimeline;
-
+      totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;
     } else {
-      // Non-manual services use ATTC + Buffer
+      // Non-FME services use ATTC + Buffer
       let attc = parseFloat(selectedOption.dataset.attc) || 0;
       const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
 
@@ -315,16 +309,18 @@ function calculate() {
 
   } else {
     // No service selected: default to manual page-based calculation
+    // Should not occur, create error
     totalTimeline = scoping + testingTimeline;
+    alert("No service found, total timeline: ", totalTimeline);
   }
 
   // Safety: ensure totalTimeline is a finite number
   if (!Number.isFinite(totalTimeline)) {
-    console.log('%cComputed totalTimeline is not a finite number, defaulting to 0', 'color: #b45f00; font-weight: 600;', totalTimeline);
+    console.warn('%cComputed totalTimeline is not a finite number, defaulting to 0', 'color: #b45f00; font-weight: 600;', totalTimeline);
     totalTimeline = 0;
   }
 
-  console.log('Service:', selectedOption ? selectedOption.value : 'none', '| totalTimeline:', totalTimeline);
+  // console.log('Service:', selectedOption ? selectedOption.value : 'none', '| totalTimeline:', totalTimeline);
 
   const resultsList = document.getElementById("resultsList");
   // Clear previous results
@@ -353,7 +349,7 @@ function calculate() {
   resultsList.appendChild(dtTimeline);
   resultsList.appendChild(ddTimeline);
 
-  console.log('Total timeline (days):', totalTimeline, delivery ? '| delivery: ' + delivery.toLocaleDateString() : '');
+  // console.log('Total timeline (days):', totalTimeline, delivery ? '| delivery: ' + delivery.toLocaleDateString() : '');
 }
 
 // Adds or subtracts n business days to a given date (skips weekends)
@@ -364,7 +360,7 @@ function addBusinessDays(date, days) {
   const direction = Math.sign(days);
   let remaining = Math.abs(days);
 
-  console.log('direction: ', direction, '| remaining days: ', remaining);
+  // console.log('direction: ', direction, '| remaining days: ', remaining);
   while (remaining > 0) {
     result.setDate(result.getDate() + direction);
     const day = result.getDay();
@@ -372,7 +368,7 @@ function addBusinessDays(date, days) {
     if (day === 0 || day === 6) continue;
     // Skip holidays (ISO date string in GLOBAL_HOLIDAYS)
     try {
-      const iso = result.toISOString().slice(0,10);
+      const iso = result.toISOString().slice(0, 10);
       if (window.GLOBAL_HOLIDAYS && window.GLOBAL_HOLIDAYS.has(iso)) continue;
     } catch (e) {
       // ignore toISOString errors
