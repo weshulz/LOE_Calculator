@@ -1,15 +1,11 @@
 /*
   MANAGER CONFIGURATION
   ---------------------
-  This top section groups values a manager or product owner may edit without
+  This top section groups values a manager may edit without
   digging through the implementation below. Edit these values to change the
   app behavior. Keep the shapes consistent: services array entries must include
   "Services", "ATTC", and "Buffer". Holidays should be ISO date strings
-  (YYYY-MM-DD). Multipliers represent numeric values used by the calculator.
-
-  NOTE: When serving locally via file:// the app falls back to these embedded
-  defaults. When served over HTTP the `data/services.json` and optionally
-  `data/holidays.json` will be used instead.
+  (YYYY-MM-DD). Multipliers represent numeric values in days used by the calculator.
 */
 
 // Services: list of service types with ATTC and Buffer (editable)
@@ -40,8 +36,8 @@ const MANAGER_MULTIPLIERS = {
 // Holidays (ISO strings). You can optionally create data/holidays.json to override.
 const MANAGER_HOLIDAYS = [
   '2025-11-27', // Thanksgiving (example)
-  '2025-12-25', // Christmas
-  '2025-12-26'  // Boxing day observed
+  '2025-12-25', // Christmas (example)
+  '2025-12-26'  // Boxing day observed (example)
 ];
 
 // Which services use the page-based (manual) calculation
