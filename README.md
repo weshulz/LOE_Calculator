@@ -1,12 +1,17 @@
 Project Scope Estimator
 =======================
 
-Setup Quick Link for Users:
+Setup Quick Link for Users
+--------------------------
+
 1. Go to https://levelaccess.sharepoint.com/sites/CX_Delivery/Shared%20Documents/Forms/AllItems.asp[…]ols&viewid=3dd6cd31%2Db51e%2D4af1%2Dbe23%2D0d4268717489
 2. Click on "Add shortcut to OneDrive".
 3. Go to your desktop (not the OneDrive web app) and open that folder.
 4. Open the AllInOne folder.
-5. Open the index.html in Google Chrome (or preferred browser)
+5. Open the `index.html` file in Google Chrome (or your preferred browser).
+6. Add this tab to your bookmarks for quick access.
+
+Some of the below may be outdated, if you wish to contribute, reach out to wesley hulsizer for access to the repo
 
 Quick links
 - Original Excel used to design the calculator: https://levelaccess-my.sharepoint.com/:x:/p/nell_k/EcqRE5riS3NKmVTkbZzTKUYBtACbURetw7V4FpNNMZGQ3A?email=wesley.hulsizer%40levelaccess.com&e=0vhmsU
