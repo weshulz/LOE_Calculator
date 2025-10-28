@@ -84,14 +84,13 @@ button:hover {
   border: 1px solid black;
   padding: 1.25rem 1rem;
   margin-top: 0.75rem;
-  background: rgba(0, 0, 0, 0.03);
-
   font-weight: 600;
-  font-size: 1rem;
-  border-radius: 6px;
+  font-size: 1.5rem;
   min-height: 4rem;
 }
-
+#deliveryDateValue {
+  /* font-size: 2rem; */
+}
 #results dl {
   margin: 0;
 }
@@ -103,10 +102,15 @@ button:hover {
 }
 
 #results dd {
-  color: #0665d0;
+  /* color: #0665d0; */
   font-weight: 800;
   margin: 0.25rem 0 0.75rem 0;
   padding-bottom: 0.5rem;
+  text-align: center;
+}
+#deliveryDateValue {
+    background: #cce0ff;
+    padding: 0.25rem 1rem;
 }
 
 .copy-date-btn {
