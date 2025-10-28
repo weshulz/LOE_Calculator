@@ -1,6 +1,4 @@
 // TODO add copy button for date results
-// Make estiamted totoal timeline more less noticeable (secodnary designed)
-// TODO add curation confluence page link to bottom of page
 
 /*
   MANAGER CONFIGURATION
