@@ -1,3 +1,6 @@
+// TODO add copy button for date results
+// Make estiamted totoal timeline more less noticeable (secodnary designed)
+
 /*
   MANAGER CONFIGURATION
   ---------------------
@@ -288,9 +291,13 @@ function calculate() {
       const pagesEffort = pagesCount * pageEff;
       const pagesReview = pagesCount * finalRev;
 
-      // console.log('Full Manual components -> attc:', attc, 'buffer:', buffer, 'scoping:', scopingVal, 'pageEffort*pages:', pagesEffort, 'triage:', triageVal, 'finalReview*pages:', pagesReview);
-
-      totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;
+      if (pagesCount <= 10) {
+        totalTimeline = attc + buffer;
+      } else {
+        // console.log('Full Manual components -> attc:', attc, 'buffer:', buffer, 'scoping:', scopingVal, 'pageEffort*pages:', pagesEffort, 'triage:', triageVal, 'finalReview*pages:', pagesReview);
+        totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;  
+      }
+      
     } else {
       // Non-FME services use ATTC + Buffer
       let attc = parseFloat(selectedOption.dataset.attc) || 0;
