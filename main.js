@@ -343,10 +343,14 @@ function calculate() {
     console.log('Start Date: ', start.toLocaleDateString(), '| Delivery Date: ', delivery.toLocaleDateString());
     const dtDelivery = document.createElement("dt");
     dtDelivery.textContent = "Estimated Delivery Date:";
-    const ddDelivery = document.createElement("dd");
-    ddDelivery.innerHTML = `<span>${delivery.toLocaleDateString()}</span>`;
-    resultsList.appendChild(dtDelivery);
-    resultsList.appendChild(ddDelivery);
+  const ddDelivery = document.createElement("dd");
+  // explicit span with id so external copy logic can find the date text
+  const span = document.createElement('span');
+  span.id = 'deliveryDateValue';
+  span.textContent = delivery.toLocaleDateString();
+  ddDelivery.appendChild(span);
+  resultsList.appendChild(dtDelivery);
+  resultsList.appendChild(ddDelivery);
   }
 
   // Estimated Total Timeline (always shown)
@@ -425,4 +429,71 @@ loadServices().then(() => {
   setIfExists('onshoreMultiplier', mult.onshoreMultiplier);
 
   calculate();
+  // Setup copy button behavior after initial render
+  try {
+    setupCopyButton();
+  } catch (e) {
+    // swallow if setup not available
+  }
 }); // Initial calculation after services load
+
+// Copy-button setup moved here (was previously inline in index.html)
+function setupCopyButton() {
+  const copyBtn = document.getElementById('copyDeliveryBtn');
+  const resultsList = document.getElementById('resultsList');
+  if (!copyBtn || !resultsList) return;
+
+  function updateCopyBtn() {
+    const hasDateSpan = !!document.getElementById('deliveryDateValue');
+    const hasDd = !!resultsList.querySelector('dd');
+    copyBtn.style.display = (hasDateSpan || hasDd) ? '' : 'none';
+  }
+
+  updateCopyBtn();
+  try {
+    const mo = new MutationObserver(updateCopyBtn);
+    mo.observe(resultsList, { childList: true, subtree: true });
+  } catch (e) {
+    if (resultsList.children.length) copyBtn.style.display = '';
+  }
+
+  copyBtn.addEventListener('click', function () {
+    const dateEl = document.getElementById('deliveryDateValue');
+    let text = '';
+    if (dateEl) text = dateEl.textContent.trim();
+    else {
+      const dd = resultsList.querySelector('dd');
+      if (dd) text = dd.textContent.trim();
+    }
+
+    if (!text) {
+      alert('No delivery date available to copy');
+      return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        const orig = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        setTimeout(function () { copyBtn.textContent = orig; }, 1400);
+      }).catch(function () { alert('Copy failed'); });
+      return;
+    }
+
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      const orig = copyBtn.textContent;
+      copyBtn.textContent = ok ? 'Copied!' : 'Copy failed';
+      setTimeout(function () { copyBtn.textContent = orig; }, 1400);
+    } catch (e) {
+      document.body.removeChild(ta);
+      alert('Copy failed');
+    }
+  });
+}
