@@ -17,8 +17,7 @@ input:focus {
   outline: 2px solid transparent !important;
 }
 
-form {
-  max-width: 920px;
+.card-design {
   background-color: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -220,5 +219,14 @@ button[type="button"].editing-enabled {
 
 h2,
 h3 {
+  color: #003057;
+}
+
+.information-banner {
+  background-color: #e6f0ff;
+  border-left: 4px solid #005ea2;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
   color: #003057;
 }
