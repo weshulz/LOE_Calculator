@@ -434,8 +434,8 @@ function validateStartDate() {
       warn.className = 'start-date-warning';
       // alert + assertive for screen readers
       warn.setAttribute('role', 'alert');
-      warn.setAttribute('aria-live', 'assertive');
-      warn.textContent = 'You selected a future date, this should only be used in providing estimates on future tickets and not current tickets.';
+      warn.setAttribute('aria-live', 'polite');
+      warn.textContent = 'Warning: You selected a future date. Only use future dates in providing potential estimates on future tickets and not currently active tickets.';
       // insert after the start date input
       el.insertAdjacentElement('afterend', warn);
 
