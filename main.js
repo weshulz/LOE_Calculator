@@ -303,10 +303,10 @@ function calculate() {
       let attc = parseFloat(selectedOption.dataset.attc) || 0;
       const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
 
-      // If Validation, add findings-based days: 1 day per 20 findings
+      // If Validation, add findings-based days: MATH FROM JORDAN AND CHRIS 
       if (svc === 'Validation') {
         const findings = parseInt(document.getElementById('findingsCount').value) || 0;
-        const extra = Math.floor(findings / 20);
+        const extra = Math.floor(findings / 50) * 2;
         attc += extra;
       }
 
@@ -351,8 +351,10 @@ function calculate() {
   // Estimated Total Timeline (always shown)
   const dtTimeline = document.createElement("dt");
   dtTimeline.textContent = "Estimated Total Timeline:";
+  dtTimeline.classList.add('secondary-text');
   const ddTimeline = document.createElement("dd");
   ddTimeline.innerHTML = `<span>${totalTimeline.toFixed(1)} Business Days</span>`;
+  ddTimeline.classList.add('secondary-text');
   resultsList.appendChild(dtTimeline);
   resultsList.appendChild(ddTimeline);
 

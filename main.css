@@ -86,7 +86,7 @@ button:hover {
   padding: 1.25rem 1rem;
   margin-top: 0.75rem;
   background: rgba(0, 0, 0, 0.03);
-  
+
   font-weight: 600;
   font-size: 1rem;
   border-radius: 6px;
@@ -108,6 +108,21 @@ button:hover {
   font-weight: 800;
   margin: 0.25rem 0 0.75rem 0;
   padding-bottom: 0.5rem;
+}
+
+#results dt.secondary-text {
+  font-weight: 400;
+  color: #555;
+  font-size: 0.9rem;
+  padding-left: 0.25rem;
+  margin-top: 4rem;
+}
+
+#results dd.secondary-text {
+  font-weight: 400;
+  color: #555;
+  font-size: 0.9rem;
+  padding-left: 0.25rem;
 }
 
 .hint {
@@ -188,6 +203,7 @@ button[type="button"].editing-enabled {
   outline: 1px solid #fff;
 }
 
-h2, h3 {
+h2,
+h3 {
   color: #003057;
 }
