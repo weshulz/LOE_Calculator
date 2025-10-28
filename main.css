@@ -88,9 +88,6 @@ button:hover {
   font-size: 1.5rem;
   min-height: 4rem;
 }
-#deliveryDateValue {
-  /* font-size: 2rem; */
-}
 #results dl {
   margin: 0;
 }
@@ -152,6 +149,16 @@ button:hover {
   padding: 0.5rem 0.75rem;
   border-radius: 4px;
   margin-bottom: 0.75rem;
+}
+
+.start-date-warning {
+  margin: -1.25rem 0rem 1rem;
+  color: #5a4b00;
+  background: #fff8d6;
+  border-left: 4px solid #ffd24d;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-weight: 600;
 }
 
 .form-container {

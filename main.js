@@ -398,7 +398,7 @@ function addBusinessDays(date, days) {
   const el = document.getElementById(id);
   if (el) el.addEventListener("input", calculate);
 });
-document.getElementById("startDate").addEventListener("input", calculate);
+document.getElementById("startDate").addEventListener("input", () => { validateStartDate(); calculate(); });
 
 // Also watch advanced fields when unlocked
 ["pageEffort", "scoping", "triage", "finalReview", "difficultyMultiplier", "onshoreMultiplier"].forEach((id) => {
@@ -411,6 +411,56 @@ const startInput = document.getElementById("startDate");
 if (startInput && !startInput.value) {
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   startInput.value = today;
+}
+
+// Validate start date: warn if user picks a future date
+function validateStartDate() {
+  const el = document.getElementById('startDate');
+  if (!el) return;
+  const val = el.value;
+  const existing = document.getElementById('startDateWarning');
+  if (!val) {
+    if (existing) existing.remove();
+    return;
+  }
+  // compare dates at midnight local time
+  const selected = new Date(val + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (selected > today) {
+    if (!existing) {
+      const warn = document.createElement('div');
+      warn.id = 'startDateWarning';
+      warn.className = 'start-date-warning';
+      // alert + assertive for screen readers
+      warn.setAttribute('role', 'alert');
+      warn.setAttribute('aria-live', 'assertive');
+      warn.textContent = 'You selected a future date, this should only be used in providing estimates on future tickets and not current tickets.';
+      // insert after the start date input
+      el.insertAdjacentElement('afterend', warn);
+
+      // attach the warning to the input via aria-describedby, preserving any existing descriptors
+      const existingDesc = el.getAttribute('aria-describedby');
+      // store original for later restore
+      if (typeof el.dataset !== 'undefined') el.dataset.origAriaDesc = existingDesc || '';
+      const newDesc = existingDesc ? (existingDesc + ' startDateWarning') : 'startDateWarning';
+      el.setAttribute('aria-describedby', newDesc);
+    }
+  } else {
+    if (existing) existing.remove();
+    // restore original aria-describedby if we stored one, otherwise remove
+    try {
+      const orig = el.dataset && el.dataset.origAriaDesc !== undefined ? el.dataset.origAriaDesc : null;
+      if (orig) {
+        el.setAttribute('aria-describedby', orig);
+      } else {
+        el.removeAttribute('aria-describedby');
+      }
+      if (el.dataset) delete el.dataset.origAriaDesc;
+    } catch (e) {
+      // ignore
+    }
+  }
 }
 
 // Populate services then calculate
@@ -428,6 +478,7 @@ loadServices().then(() => {
   setIfExists('difficultyMultiplier', mult.difficultyMultiplier);
   setIfExists('onshoreMultiplier', mult.onshoreMultiplier);
 
+  validateStartDate(); // Call validateStartDate on initialization
   calculate();
   // Setup copy button behavior after initial render
   try {
