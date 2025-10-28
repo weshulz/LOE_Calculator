@@ -337,21 +337,24 @@ function calculate() {
   // Compute Estimated Delivery Date if a start date is provided — render delivery first
   const startDateValue = document.getElementById("startDate").value;
   let delivery = null;
+  const dtDelivery = document.createElement("dt");
+  dtDelivery.textContent = "Estimated Delivery Date:";
+  const ddDelivery = document.createElement("dd");
   if (startDateValue) {
     const start = new Date(startDateValue);
     delivery = addBusinessDays(start, Math.round(totalTimeline));
     console.log('Start Date: ', start.toLocaleDateString(), '| Delivery Date: ', delivery.toLocaleDateString());
-    const dtDelivery = document.createElement("dt");
-    dtDelivery.textContent = "Estimated Delivery Date:";
-  const ddDelivery = document.createElement("dd");
-  // explicit span with id so external copy logic can find the date text
-  const span = document.createElement('span');
-  span.id = 'deliveryDateValue';
-  span.textContent = delivery.toLocaleDateString();
-  ddDelivery.appendChild(span);
+    // explicit span with id so copy logic can find the date text
+    const span = document.createElement('span');
+    span.id = 'deliveryDateValue';
+    span.textContent = delivery.toLocaleDateString();
+    ddDelivery.appendChild(span);
+  } else {
+    // No start date provided — prompt user to enter one
+    ddDelivery.textContent = 'Provide the ticket creation date for estimate.';
+  }
   resultsList.appendChild(dtDelivery);
   resultsList.appendChild(ddDelivery);
-  }
 
   // Estimated Total Timeline (always shown)
   const dtTimeline = document.createElement("dt");
@@ -495,9 +498,9 @@ function setupCopyButton() {
   if (!copyBtn || !resultsList) return;
 
   function updateCopyBtn() {
+    // show only when an actual delivery date is present (deliveryDateValue)
     const hasDateSpan = !!document.getElementById('deliveryDateValue');
-    const hasDd = !!resultsList.querySelector('dd');
-    copyBtn.style.display = (hasDateSpan || hasDd) ? '' : 'none';
+    copyBtn.style.display = hasDateSpan ? '' : 'none';
   }
 
   updateCopyBtn();
@@ -510,17 +513,11 @@ function setupCopyButton() {
 
   copyBtn.addEventListener('click', function () {
     const dateEl = document.getElementById('deliveryDateValue');
-    let text = '';
-    if (dateEl) text = dateEl.textContent.trim();
-    else {
-      const dd = resultsList.querySelector('dd');
-      if (dd) text = dd.textContent.trim();
-    }
-
-    if (!text) {
+    if (!dateEl) {
       alert('No delivery date available to copy');
       return;
     }
+    const text = dateEl.textContent.trim();
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(function () {

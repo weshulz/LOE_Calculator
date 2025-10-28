@@ -87,6 +87,7 @@ button:hover {
   font-weight: 600;
   font-size: 1.5rem;
   min-height: 4rem;
+  max-width: 283px;
 }
 #results dl {
   margin: 0;
