@@ -110,6 +110,21 @@ button:hover {
   padding-bottom: 0.5rem;
 }
 
+.copy-date-btn {
+  margin-left: 0.75rem;
+  background: #e6f0ff;
+  color: #003057;
+  border: 1px solid #cce0ff;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.copy-date-btn:hover {
+  background: #d0e8ff;
+}
+
 #results dt.secondary-text {
   font-weight: 400;
   color: #555;

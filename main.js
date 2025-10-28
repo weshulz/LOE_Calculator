@@ -1,5 +1,6 @@
 // TODO add copy button for date results
 // Make estiamted totoal timeline more less noticeable (secodnary designed)
+// TODO add curation confluence page link to bottom of page
 
 /*
   MANAGER CONFIGURATION
@@ -303,11 +304,13 @@ function calculate() {
       let attc = parseFloat(selectedOption.dataset.attc) || 0;
       const buffer = parseFloat(selectedOption.dataset.buffer) || 0;
 
-      // If Validation, add findings-based days: MATH FROM JORDAN AND CHRIS 
+      // If Validation, add findings-based days: For every 10 beyond 50, we add 1 day (first add day is 60)
       if (svc === 'Validation') {
         const findings = parseInt(document.getElementById('findingsCount').value) || 0;
-        const extra = Math.floor(findings / 50) * 2;
-        attc += extra;
+        if (findings > 50) { 
+          const extra = Math.floor(findings / 10) - 4;
+          attc += extra;
+        } 
       }
 
       console.log('ATTC: ', attc, '| Buffer: ', buffer);
