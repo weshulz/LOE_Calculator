@@ -234,6 +234,17 @@ async function loadServices() {
   window.GLOBAL_MULTIPLIERS = GLOBAL_MULTIPLIERS;
 }
 
+// Format a date as "Monthname DD, YYYY" (e.g., "October 24, 2025")
+function formatLongDate(d) {
+  if (!d) return '';
+  try {
+    return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(d);
+  } catch (e) {
+    // fallback
+    return d.toDateString();
+  }
+}
+
 
 function calculate() {
   // updateMultipliers();
@@ -294,9 +305,9 @@ function calculate() {
         totalTimeline = attc + buffer;
       } else {
         // console.log('Full Manual components -> attc:', attc, 'buffer:', buffer, 'scoping:', scopingVal, 'pageEffort*pages:', pagesEffort, 'triage:', triageVal, 'finalReview*pages:', pagesReview);
-        totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;  
+        totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;
       }
-      
+
     } else {
       // Non-FME services use ATTC + Buffer
       let attc = parseFloat(selectedOption.dataset.attc) || 0;
@@ -305,10 +316,10 @@ function calculate() {
       // If Validation, add findings-based days: For every 10 beyond 50, we add 1 day (first add day is 60)
       if (svc === 'Validation') {
         const findings = parseInt(document.getElementById('findingsCount').value) || 0;
-        if (findings > 50) { 
+        if (findings > 50) {
           const extra = Math.floor(findings / 10) - 4;
           attc += extra;
-        } 
+        }
       }
 
       console.log('ATTC: ', attc, '| Buffer: ', buffer);
@@ -343,11 +354,14 @@ function calculate() {
   if (startDateValue) {
     const start = new Date(startDateValue);
     delivery = addBusinessDays(start, Math.round(totalTimeline));
-    console.log('Start Date: ', start.toLocaleDateString(), '| Delivery Date: ', delivery.toLocaleDateString());
+    // console.log('Start Date: ', formatLongDate(start), '| Delivery Date: ', formatLongDate(delivery));
     // explicit span with id so copy logic can find the date text
     const span = document.createElement('span');
     span.id = 'deliveryDateValue';
-    span.textContent = delivery.toLocaleDateString();
+    // human-readable display
+    span.textContent = formatLongDate(delivery);
+    // add machine-readable ISO date for clipboard or other automation
+    try { span.setAttribute('data-iso', delivery.toISOString().slice(0, 10)); } catch (e) { }
     ddDelivery.appendChild(span);
   } else {
     // No start date provided — prompt user to enter one
@@ -366,7 +380,7 @@ function calculate() {
   resultsList.appendChild(dtTimeline);
   resultsList.appendChild(ddTimeline);
 
-  // console.log('Total timeline (days):', totalTimeline, delivery ? '| delivery: ' + delivery.toLocaleDateString() : '');
+  // console.log('Total timeline (days):', totalTimeline, delivery ? '| delivery: ' + formatLongDate(delivery) : '');
 }
 
 // Adds or subtracts n business days to a given date (skips weekends)
@@ -429,7 +443,7 @@ function validateStartDate() {
   // compare dates at midnight local time
   const selected = new Date(val + 'T00:00:00');
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
   if (selected > today) {
     if (!existing) {
       const warn = document.createElement('div');
