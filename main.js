@@ -304,7 +304,7 @@ function calculate() {
       if (pagesCount <= 10) {
         totalTimeline = attc + buffer;
       } else {
-        // console.log('Full Manual components -> attc:', attc, 'buffer:', buffer, 'scoping:', scopingVal, 'pageEffort*pages:', pagesEffort, 'triage:', triageVal, 'finalReview*pages:', pagesReview);
+        // console.log('Full Manual components -> attc:', attc, '| buffer:', buffer, '| scoping:', scopingVal, '|  pagesCount:', pagesCount,'pageEffort:', pagesEffort,'pageEffort*pages:', pagesEffort*pagesCount, '| triage:', triageVal, '| finalReview*pages:', pagesReview);
         totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;
       }
 
