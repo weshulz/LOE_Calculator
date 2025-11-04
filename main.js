@@ -1,5 +1,3 @@
-// TODO add copy button for date results
-
 /*
   MANAGER CONFIGURATION
   ---------------------
@@ -13,7 +11,7 @@
 // Services: list of service types with ATTC and Buffer (editable)
 const MANAGER_SERVICES = [
   { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
-  { Services: 'Full Manual Evaluation', ATTC: 37, Buffer: 10 },
+  { Services: 'Full Manual Evaluation', ATTC: 44, Buffer: 10 },
   { Services: 'Internal: VPAT representative sample', ATTC: 34.71, Buffer: 10 },
   { Services: 'Live Consultation', ATTC: 5, Buffer: 5 },
   { Services: 'Technical Question', ATTC: 10, Buffer: 3 },
@@ -304,7 +302,7 @@ function calculate() {
       if (pagesCount <= 10) {
         totalTimeline = attc + buffer;
       } else {
-        // console.log('Full Manual components -> attc:', attc, '| buffer:', buffer, '| scoping:', scopingVal, '|  pagesCount:', pagesCount,'pageEffort:', pagesEffort,'pageEffort*pages:', pagesEffort*pagesCount, '| triage:', triageVal, '| finalReview*pages:', pagesReview);
+        // console.log('Full Manual components -> attc:', attc, '| buffer:', buffer, '| scoping:', scopingVal, '|  pagesCount:', pagesCount, 'pageEffort:', pagesEffort, 'pageEffort*pages:', pagesEffort * pagesCount, '| triage:', triageVal, '| finalReview*pages:', pagesReview);
         totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;
       }
 
