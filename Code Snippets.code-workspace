@@ -5,25 +5,23 @@
 		}
 	],
 	"settings": {
-		
 		"workbench.colorCustomizations": {
-			"editor.background": "#212121", 
-			"editor.foreground": "#efefef", 
-			"editorLineNumber.foreground": "#CCCCCC", 
-			"editorLineNumber.activeForeground": "#efefef", 
-			"editorCursor.foreground": "#0072ce", 
-			"activityBar.background": "#1A073C", 
-			"sideBar.foreground": "#EDEDED", 
-			"statusBar.background": "#0072ce", 
-			"statusBar.foreground": "#efefef", 
-			"titleBar.activeBackground": "#0072ce", 
-			"titleBar.activeForeground": "#efefef", 
-			"tab.activeBackground": "#241F36", 
-			"tab.activeForeground": "#efefef", 
-			"tab.inactiveBackground": "#333333", 
-			"tab.inactiveForeground": "#BBBBBB" 
+			"editor.background": "#212121",
+			"editor.foreground": "#efefef",
+			"editorLineNumber.foreground": "#CCCCCC",
+			"editorLineNumber.activeForeground": "#efefef",
+			"editorCursor.foreground": "#0072ce",
+			"activityBar.background": "#1A073C",
+			"sideBar.foreground": "#EDEDED",
+			"statusBar.background": "#0072ce",
+			"statusBar.foreground": "#efefef",
+			"titleBar.activeBackground": "#0072ce",
+			"titleBar.activeForeground": "#efefef",
+			"tab.activeBackground": "#241F36",
+			"tab.activeForeground": "#efefef",
+			"tab.inactiveBackground": "#333333",
+			"tab.inactiveForeground": "#BBBBBB"
 		},
-		
 		"editor.tokenColorCustomizations": {
 			"textMateRules": [
 				{
@@ -33,7 +31,7 @@
 						"string.comment"
 					],
 					"settings": {
-						"foreground": "#FF6700" 
+						"foreground": "#FF6700"
 					}
 				},
 				{
@@ -43,32 +41,29 @@
 						"constant.numeric"
 					],
 					"settings": {
-						"foreground": "#E53A40" 
+						"foreground": "#E53A40"
 					}
 				},
 				{
 					"scope": "variable",
 					"settings": {
-						"foreground": "#47A3F3" 
+						"foreground": "#47A3F3"
 					}
 				},
 				{
 					"scope": "keyword",
 					"settings": {
-						"foreground": "#FF5500" 
+						"foreground": "#FF5500"
 					}
 				}
 			]
 		},
-		
 		"editor.fontFamily": "'Atkinson Hyperlegible', 'Input Mono', 'Verdana', monospace",
 		"editor.fontSize": 14,
 		"editor.fontWeight": "normal",
 		"editor.lineHeight": 22,
-		
 		"terminal.integrated.fontFamily": "'Input Mono', 'Atkinson Hyperlegible', monospace",
 		"terminal.integrated.fontSize": 14,
-		
 		"workbench.fontAliasing": "default"
 	}
 }
