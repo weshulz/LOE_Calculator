@@ -29,7 +29,7 @@ const MANAGER_MULTIPLIERS = {
   difficultyMultiplier: 1.0,
   onshoreMultiplier: 1.0,
   triage: 0.25,
-  finalReview: 0.0625,
+  finalReview: 0.021,
   repSample: 10
 };
 
@@ -296,14 +296,16 @@ function calculate() {
       const scopingVal = parseFloat(mult.scoping ?? document.getElementById('scoping').value) || 0;
       const triageVal = parseFloat(mult.triage ?? document.getElementById('triage').value) || 0;
 
-      const pagesEffort = pagesCount * pageEff;
-      const pagesReview = pagesCount * finalRev;
+      let pagesEffort = pagesCount * pageEff;
+      let pagesReview = pagesCount * finalRev;
 
       if (pagesCount <= 10) {
         totalTimeline = attc + buffer;
       } else {
         console.log('Full Manual components -> attc:', attc, '| buffer:', buffer, '| scoping:', scopingVal, '|  pagesCount:', pagesCount, 'pageEffort:', pagesEffort, 'pageEffort*pages:', pagesEffort * pagesCount, '| triage:', triageVal, '| finalReview*pages:', pagesReview);
-        totalTimeline = attc + buffer + scopingVal + pagesEffort + triageVal + pagesReview;
+        pagesEffort = (pagesCount - 10) * pageEff;
+        pagesReview = (pagesCount - 10) * finalRev;
+        totalTimeline = attc + buffer + pagesEffort + pagesReview;
       }
 
     } else {
