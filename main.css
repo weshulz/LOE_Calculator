@@ -7,6 +7,10 @@ body {
   max-width: 1080px;
 }
 
+.d-none {
+  display: none !important;
+}
+
 input:focus {
   outline-offset: 2px;
   outline: #a30083 2px solid;
@@ -111,6 +115,17 @@ button:hover {
 #deliveryDateValue {
   background: #cce0ff;
   padding: 0.25rem 1rem;
+}
+
+.btn.btn-primary {
+  background-color: #0072ce;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin: 0.25rem 0rem 0.5rem;
 }
 
 .copy-date-btn {
@@ -242,10 +257,13 @@ h3 {
   background-color: #e6f0ff;
   border-left: 4px solid #005ea2;
   padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   border-radius: 4px;
   color: #003057;
+  font-weight: 500;
+  font-size: 1rem;
 }
+
 .information-banner.secondary {
   background-color: #f3dec7;
   border-left: 4px solid #bd6706;

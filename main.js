@@ -365,9 +365,14 @@ function calculate() {
     // add machine-readable ISO date for clipboard or other automation
     try { span.setAttribute('data-iso', delivery.toISOString().slice(0, 10)); } catch (e) { }
     ddDelivery.appendChild(span);
+    // also populate the delivery message span if present
+    const msgSpan = document.getElementById('delivery_date_2');
+    if (msgSpan) msgSpan.textContent = span.textContent;
     results2.innerHTML = formatLongDate(delivery);
   } else {
     // No start date provided — prompt user to enter one
+    const msgSpan = document.getElementById('delivery_date_2');
+    if (msgSpan) msgSpan.textContent = '';
     ddDelivery.textContent = 'Provide the ticket creation date for estimate.';
   }
   resultsList.appendChild(dtDelivery);
@@ -376,7 +381,7 @@ function calculate() {
   // Estimated Total Timeline (always shown)
   const dtTimeline = document.createElement("dt");
   dtTimeline.textContent = "Estimated Total Timeline:";
-  dtTimeline.classList.add('secondary-text');
+  dtTimeline.classList.add('secondary-text','d-none');
   const ddTimeline = document.createElement("dd");
   ddTimeline.innerHTML = `<span>${totalTimeline.toFixed(1)} Business Days</span>`;
   ddTimeline.classList.add('secondary-text');
@@ -503,6 +508,8 @@ loadServices().then(() => {
   // Setup copy button behavior after initial render
   try {
     setupCopyButton();
+    // message copy button setup
+    try { setupCopyMessageButton(); } catch (e) {}
   } catch (e) {
     // swallow if setup not available
   }
@@ -556,6 +563,49 @@ function setupCopyButton() {
       const orig = copyBtn.textContent;
       copyBtn.textContent = ok ? 'Copied!' : 'Copy failed';
       setTimeout(function () { copyBtn.textContent = orig; }, 1400);
+    } catch (e) {
+      document.body.removeChild(ta);
+      alert('Copy failed');
+    }
+  });
+}
+
+// Setup the copy button for the delivery_message paragraph
+function setupCopyMessageButton() {
+  const btn = document.getElementById('copyDeliveryMessageBtn');
+  const messageEl = document.getElementById('delivery_message');
+  if (!btn || !messageEl) return;
+
+  btn.style.display = '';
+
+  btn.addEventListener('click', function () {
+    // copy the visible plain text of the paragraph (includes the inner span content)
+    const text = messageEl.innerText.trim();
+    if (!text) {
+      alert('No delivery message available to copy');
+      return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = orig; }, 1400);
+      }).catch(function () { alert('Copy failed'); });
+      return;
+    }
+
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      const orig = btn.textContent;
+      btn.textContent = ok ? 'Copied!' : 'Copy failed';
+      setTimeout(function () { btn.textContent = orig; }, 1400);
     } catch (e) {
       document.body.removeChild(ta);
       alert('Copy failed');

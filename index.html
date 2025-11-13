@@ -54,7 +54,15 @@
 
       <div id="results">
         <dl id="resultsList" role="status" aria-live="polite"></dl>
-        <button type="button" id="copyDeliveryBtn" style="display:none" aria-label="Copy estimated delivery date">Copy estimated delivery date</button>
+        <button class="copy-date-btn d-none" type="button" id="copyDeliveryBtn" style="display:none" aria-label="Copy estimated delivery date">Copy estimated delivery date</button>
+        <p class="information-banner card-design" id="delivery_message">
+          Hi {Client Name},<br><br>
+          Based on preliminary scoping and estimated capacity, our target delivery date is <span id="delivery_date_2"></span>.<br><br>
+          Please note, this request is currently being resourced, and a confirmed delivery date will be shared with you once resources are assigned.<br><br>
+          Thank you for your patience and continued partnership.<br><br>
+          Best regards,
+        </p>
+        <button class="btn btn-primary copy-date-btn" type="button" id="copyDeliveryMessageBtn" style="display:none" aria-label="Copy delivery message date">Copy delivery message</button>
       </div>
       <fieldset class="advanced-inputs">
         <legend>Advanced Settings</legend>
@@ -86,14 +94,7 @@
 
     </div>
   </form>
-  <p class="information-banner card-design" id="delivery_message">
-    Hi {Client Name},<br>
-    Based on preliminary scoping and estimated capacity, our target delivery date is <span id="delivery_date_2"></span>.<br>
-    Please note, this request is currently being resourced, and a confirmed delivery date will be shared with you once resources are assigned.<br>
-    Thank you for your patience and continued partnership.<br>
-    Best regards,
-  </p>
-  <button type="button" id="copyDeliveryMessageBtn" style="display:none" aria-label="Copy delivery message date">Copy delivery message date</button>
+
   <p class="information-banner card-design">For more information on curation, go to <a href="https://levelaccess.atlassian.net/wiki/spaces/CXD/pages/2419589300/Book+of+Business+Curation">Book of Business : Curation</a></p>
   <p class="information-banner secondary card-design">Version 1.3</a></p>
 
