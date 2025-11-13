@@ -342,8 +342,10 @@ function calculate() {
   // console.log('Service:', selectedOption ? selectedOption.value : 'none', '| totalTimeline:', totalTimeline);
 
   const resultsList = document.getElementById("resultsList");
+  const results2 = document.getElementById("delivery_date_2");
   // Clear previous results
   resultsList.innerHTML = "";
+  results2.innerHTML = "";
 
   // Compute Estimated Delivery Date if a start date is provided — render delivery first
   const startDateValue = document.getElementById("startDate").value;
@@ -363,6 +365,7 @@ function calculate() {
     // add machine-readable ISO date for clipboard or other automation
     try { span.setAttribute('data-iso', delivery.toISOString().slice(0, 10)); } catch (e) { }
     ddDelivery.appendChild(span);
+    results2.innerHTML = formatLongDate(delivery);
   } else {
     // No start date provided — prompt user to enter one
     ddDelivery.textContent = 'Provide the ticket creation date for estimate.';
