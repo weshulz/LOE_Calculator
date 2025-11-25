@@ -19,7 +19,8 @@ const MANAGER_SERVICES = [
   { Services: 'VPAT', ATTC: 20, Buffer: 0 },
   { Services: 'VPAT Update', ATTC: 20, Buffer: 0 },
   { Services: 'Demand Review', ATTC: 15, Buffer: 0 },
-  { Services: 'Design Evaluation', ATTC: 30, Buffer: 0 }
+  { Services: 'Design Evaluation', ATTC: 30, Buffer: 0 },
+  { Services: 'Rep sample to VPAT', ATTC: 0, Buffer: 0 }
 ];
 
 // Multipliers and small constants managers may adjust
@@ -41,8 +42,8 @@ const MANAGER_HOLIDAYS = [
 ];
 
 // Which services use the page-based (manual) calculation
-const PAGE_BASED_SERVICES = ['Full Manual Evaluation'];
-const PAGES_VISIBLE_SERVICES = ['Full Manual Evaluation'];
+const PAGE_BASED_SERVICES = ['Full Manual Evaluation', 'Rep sample to VPAT'];
+const PAGES_VISIBLE_SERVICES = ['Full Manual Evaluation', 'Rep sample to VPAT'];
 
 // Default service selected when the page loads (editable)
 const DEFAULT_SELECTED_SERVICE = 'Full Manual Evaluation';
@@ -218,6 +219,12 @@ async function loadServices() {
       }
     }
 
+    // Show/hide delay inputs for Rep sample to VPAT
+    const delayInputsContainer = document.getElementById('delayInputsContainer');
+    if (delayInputsContainer) {
+      delayInputsContainer.style.display = val === 'Rep sample to VPAT' ? '' : 'none';
+    }
+
     // Always hide advanced settings (kept in DOM)
     if (advanced) advanced.style.display = 'none';
 
@@ -281,10 +288,130 @@ function calculate() {
   const manualNames = PAGE_BASED_SERVICES;
   let totalTimeline = 0;
 
-  if (selectedOption) {
+      const resultsList = document.getElementById("resultsList");
+      const multiStepResults = document.getElementById("messageContainer");
+      const multiStepContainer = document.getElementById("multiStepContainer");
+      const startDateValue = document.getElementById("startDate").value;
+
+      // Clear previous results
+      resultsList.innerHTML = "";
+      multiStepContainer.innerHTML = "";
+      multiStepResults.style.display = 'none';  if (selectedOption) {
     const svc = selectedOption.value;
 
-    // Full Manual Evaluation: ATTC + Buffer + repSample + pages*finalReview + pages*pageEffort
+    // Handle multi-step Rep sample to VPAT timeline
+    if (svc === 'Rep sample to VPAT') {
+      if (!startDateValue) {
+        const dtDelivery = document.createElement("dt");
+        dtDelivery.textContent = "Estimated Delivery Date:";
+        const ddDelivery = document.createElement("dd");
+        ddDelivery.textContent = 'Provide the ticket creation date for estimate.';
+        resultsList.appendChild(dtDelivery);
+        resultsList.appendChild(ddDelivery);
+        return;
+      }
+
+      const pagesCount = parseFloat(document.getElementById('pages').value) || 0;
+
+      // Step 1: VPAT Rep sample
+      const repSampleAttc = 25; // from Internal: VPAT representative sample
+      const step1Days = repSampleAttc;
+      const start = new Date(startDateValue);
+      const step1Delivery = addBusinessDays(start, Math.round(step1Days));
+
+      // Add delay after rep sample review
+      const repSampleDelay = parseInt(document.getElementById('repSampleDelay').value) || 0;
+      const step1DeliveryWithDelay = addBusinessDays(step1Delivery, repSampleDelay);
+
+      // Step 2: Full Manual Evaluation (starting from step1 delivery + delay)
+      let step2Days = 0;
+      const fmeAttc = 40;
+      let pagesEffort = pagesCount * pageEffort;
+      let pagesReview = pagesCount * finalReview;
+      if (pagesCount <= 10) {
+        step2Days = fmeAttc;
+      } else {
+        pagesEffort = (pagesCount - 10) * pageEffort;
+        pagesReview = (pagesCount - 10) * finalReview;
+        step2Days = fmeAttc + pagesEffort + pagesReview;
+      }
+      const step2Delivery = addBusinessDays(step1DeliveryWithDelay, Math.round(step2Days));
+
+      // Add delay after delivery meeting and validations
+      const deliveryMeetingDelay = parseInt(document.getElementById('deliveryMeetingDelay').value) || 0;
+      const step2DeliveryWithDelay = addBusinessDays(step2Delivery, deliveryMeetingDelay);
+
+      // Step 3: VPAT (starting from step2 delivery + delay)
+      const vpatAttc = 20;
+      const step3Days = vpatAttc;
+      const step3Delivery = addBusinessDays(step2DeliveryWithDelay, Math.round(step3Days));
+
+      // Display in results list: show final VPAT delivery date
+      const dtDelivery = document.createElement("dt");
+      dtDelivery.textContent = "Estimated Delivery Date:";
+      const ddDelivery = document.createElement("dd");
+      const span = document.createElement('span');
+      span.id = 'deliveryDateValue';
+      span.textContent = formatLongDate(step3Delivery);
+      try { span.setAttribute('data-iso', step3Delivery.toISOString().slice(0, 10)); } catch (e) { }
+      ddDelivery.appendChild(span);
+      resultsList.appendChild(dtDelivery);
+      resultsList.appendChild(ddDelivery);
+
+      // Display total business days
+      const totalDays = step1Days + step2Days + step3Days;
+      const dtTimeline = document.createElement("dt");
+      dtTimeline.textContent = "Estimated Total Timeline:";
+      dtTimeline.classList.add('secondary-text', 'd-none');
+      const ddTimeline = document.createElement("dd");
+      ddTimeline.innerHTML = `<span>${totalDays.toFixed(1)} Business Days</span>`;
+      ddTimeline.classList.add('secondary-text');
+      resultsList.appendChild(dtTimeline);
+      resultsList.appendChild(dtTimeline);
+      resultsList.appendChild(ddTimeline);
+
+      // Populate delivery message with final date
+      const msgSpan = document.getElementById('delivery_date_2');
+      if (msgSpan) msgSpan.textContent = span.textContent;
+
+      // Display multi-step breakdown
+      multiStepResults.style.display = '';
+      multiStepContainer.innerHTML = '';
+
+      // Step 1: Rep Sample
+      const row1 = document.createElement('div');
+      row1.className = 'step-row';
+      row1.innerHTML = `${step1Days.toFixed(1)} days for VPAT Rep Sample, ${formatLongDate(step1Delivery)} estimated delivery date`;
+      multiStepContainer.appendChild(row1);
+
+      // Delay 1: Rep Sample Review
+      const delayRow1 = document.createElement('div');
+      delayRow1.className = 'delay-row';
+      delayRow1.innerHTML = `+ ${repSampleDelay} days delay for rep sample review = ${formatLongDate(step1DeliveryWithDelay)}`;
+      multiStepContainer.appendChild(delayRow1);
+
+      // Step 2: Manual Evaluation
+      const row2 = document.createElement('div');
+      row2.className = 'step-row';
+      row2.innerHTML = `${step2Days.toFixed(1)} days for Full Manual Evaluation, ${formatLongDate(step2Delivery)} estimated delivery date`;
+      multiStepContainer.appendChild(row2);
+
+      // Delay 2: Delivery Meeting and Validations
+      const delayRow2 = document.createElement('div');
+      delayRow2.className = 'delay-row';
+      delayRow2.innerHTML = `+ ${deliveryMeetingDelay} days delay for Delivery Meeting and Validations = ${formatLongDate(step2DeliveryWithDelay)}`;
+      multiStepContainer.appendChild(delayRow2);
+
+      // Step 3: VPAT
+      const row3 = document.createElement('div');
+      row3.className = 'step-row';
+      row3.innerHTML = `${step3Days.toFixed(1)} days for VPAT, ${formatLongDate(step3Delivery)} estimated delivery date`;
+      multiStepContainer.appendChild(row3);
+
+      return; // Early exit for multi-step
+    }
+
+    // Standard single-step services
     if (svc === 'Full Manual Evaluation') {
       // Components: ATTC + Buffer + Scoping + (pageEffort * pages) + triage + (finalReview * pages)
       const mult = window.GLOBAL_MULTIPLIERS || {};
@@ -341,14 +468,7 @@ function calculate() {
 
   // console.log('Service:', selectedOption ? selectedOption.value : 'none', '| totalTimeline:', totalTimeline);
 
-  const resultsList = document.getElementById("resultsList");
-  const results2 = document.getElementById("delivery_date_2");
-  // Clear previous results
-  resultsList.innerHTML = "";
-  results2.innerHTML = "";
-
-  // Compute Estimated Delivery Date if a start date is provided — render delivery first
-  const startDateValue = document.getElementById("startDate").value;
+  // Standard single-step delivery rendering (for non-Rep sample to VPAT services)
   let delivery = null;
   const dtDelivery = document.createElement("dt");
   dtDelivery.textContent = "Estimated Delivery Date:";
@@ -368,7 +488,6 @@ function calculate() {
     // also populate the delivery message span if present
     const msgSpan = document.getElementById('delivery_date_2');
     if (msgSpan) msgSpan.textContent = span.textContent;
-    results2.innerHTML = formatLongDate(delivery);
   } else {
     // No start date provided — prompt user to enter one
     const msgSpan = document.getElementById('delivery_date_2');
@@ -381,7 +500,7 @@ function calculate() {
   // Estimated Total Timeline (always shown)
   const dtTimeline = document.createElement("dt");
   dtTimeline.textContent = "Estimated Total Timeline:";
-  dtTimeline.classList.add('secondary-text','d-none');
+  dtTimeline.classList.add('secondary-text', 'd-none');
   const ddTimeline = document.createElement("dd");
   ddTimeline.innerHTML = `<span>${totalTimeline.toFixed(1)} Business Days</span>`;
   ddTimeline.classList.add('secondary-text');
@@ -419,7 +538,7 @@ function addBusinessDays(date, days) {
 }
 
 // Watch for updates
-["complexity", "onshore", "pages", "findingsCount"].forEach((id) => {
+["complexity", "onshore", "pages", "findingsCount", "repSampleDelay", "deliveryMeetingDelay"].forEach((id) => {
   const el = document.getElementById(id);
   if (el) el.addEventListener("input", calculate);
 });
