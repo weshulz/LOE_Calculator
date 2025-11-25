@@ -10,7 +10,7 @@
 
 // Services: list of service types with ATTC and Buffer (editable)
 const MANAGER_SERVICES = [
-  { Services: 'Evaluation', ATTC: 44, Buffer: 10 },
+  { Services: 'Evaluation', ATTC: 40, Buffer: 0 },
   { Services: 'Full Manual Evaluation', ATTC: 40, Buffer: 0 },
   { Services: 'Internal: VPAT representative sample', ATTC: 25, Buffer: 0 },
   { Services: 'Live Consultation', ATTC: 10, Buffer: 0 },
