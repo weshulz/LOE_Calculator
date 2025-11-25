@@ -20,7 +20,7 @@ const MANAGER_SERVICES = [
   { Services: 'VPAT Update', ATTC: 20, Buffer: 0 },
   { Services: 'Demand Review', ATTC: 15, Buffer: 0 },
   { Services: 'Design Evaluation', ATTC: 30, Buffer: 0 },
-  { Services: 'Rep sample to VPAT', ATTC: 0, Buffer: 0 }
+  { Services: 'Special FME Full Timeline', ATTC: 0, Buffer: 0 }
 ];
 
 // Multipliers and small constants managers may adjust
@@ -42,8 +42,8 @@ const MANAGER_HOLIDAYS = [
 ];
 
 // Which services use the page-based (manual) calculation
-const PAGE_BASED_SERVICES = ['Full Manual Evaluation', 'Rep sample to VPAT'];
-const PAGES_VISIBLE_SERVICES = ['Full Manual Evaluation', 'Rep sample to VPAT'];
+const PAGE_BASED_SERVICES = ['Full Manual Evaluation', 'Special FME Full Timeline'];
+const PAGES_VISIBLE_SERVICES = ['Full Manual Evaluation', 'Special FME Full Timeline'];
 
 // Default service selected when the page loads (editable)
 const DEFAULT_SELECTED_SERVICE = 'Full Manual Evaluation';
@@ -219,10 +219,10 @@ async function loadServices() {
       }
     }
 
-    // Show/hide delay inputs for Rep sample to VPAT
+    // Show/hide delay inputs for Special FME Full Timeline
     const delayInputsContainer = document.getElementById('delayInputsContainer');
     if (delayInputsContainer) {
-      delayInputsContainer.style.display = val === 'Rep sample to VPAT' ? '' : 'none';
+      delayInputsContainer.style.display = val === 'Special FME Full Timeline' ? '' : 'none';
     }
 
     // Always hide advanced settings (kept in DOM)
@@ -299,8 +299,8 @@ function calculate() {
       multiStepResults.style.display = 'none';  if (selectedOption) {
     const svc = selectedOption.value;
 
-    // Handle multi-step Rep sample to VPAT timeline
-    if (svc === 'Rep sample to VPAT') {
+    // Handle multi-step Special FME Full Timeline timeline
+    if (svc === 'Special FME Full Timeline') {
       if (!startDateValue) {
         const dtDelivery = document.createElement("dt");
         dtDelivery.textContent = "Estimated Delivery Date:";
@@ -370,9 +370,15 @@ function calculate() {
       resultsList.appendChild(dtTimeline);
       resultsList.appendChild(ddTimeline);
 
-      // Populate delivery message with final date
-      const msgSpan = document.getElementById('delivery_date_2');
-      if (msgSpan) msgSpan.textContent = span.textContent;
+      // Populate delivery message with final date and insert the special-case paragraph as the second paragraph
+      const deliveryMessageEl = document.getElementById('delivery_message');
+      if (deliveryMessageEl) {
+        // Build the special timeline sentence using computed dates and buffer values
+        const specialText = `Your VPAT Representative Sample estimated delivery date is ${formatLongDate(step1Delivery)} with ${repSampleDelay} days for review and edits. The Full Manual Evaluation will then start and will have an estimated completion date of ${formatLongDate(step2Delivery)}. After ${deliveryMeetingDelay} days for review, fixes and validation, we will start the VPAT and we estimate delivery of your VPAT on ${formatLongDate(step3Delivery)}.`;
+
+        // Compose the delivery_message content so the specialText appears as the second paragraph (separated by double breaks)
+        deliveryMessageEl.innerHTML = `Based on preliminary scoping and estimated capacity, our target delivery date is <span id="delivery_date_2">${span.textContent}</span>.<br><br>${specialText}<br><br>Please note, this request is currently being resourced, and a confirmed delivery date will be shared with you once resources are assigned.<br><br>Thank you for your patience and continued partnership.<br><br>Best regards,`;
+      }
 
       // Display multi-step breakdown
       multiStepResults.style.display = '';
@@ -468,7 +474,7 @@ function calculate() {
 
   // console.log('Service:', selectedOption ? selectedOption.value : 'none', '| totalTimeline:', totalTimeline);
 
-  // Standard single-step delivery rendering (for non-Rep sample to VPAT services)
+  // Standard single-step delivery rendering (for non-Special FME Full Timeline services)
   let delivery = null;
   const dtDelivery = document.createElement("dt");
   dtDelivery.textContent = "Estimated Delivery Date:";
