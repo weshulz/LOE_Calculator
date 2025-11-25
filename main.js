@@ -225,6 +225,19 @@ async function loadServices() {
       delayInputsContainer.style.display = val === 'Special FME Full Timeline' ? '' : 'none';
     }
 
+    // Show/hide escalated request container for Special FME Full Timeline
+    const escalatedRequestContainer = document.getElementById('escalatedRequestContainer');
+    if (escalatedRequestContainer) {
+      escalatedRequestContainer.style.display = val === 'Special FME Full Timeline' ? '' : 'none';
+      // Reset checkbox and hide ATTC inputs when switching away
+      if (val !== 'Special FME Full Timeline') {
+        const escalatedCheckbox = document.getElementById('escalatedRequest');
+        if (escalatedCheckbox) escalatedCheckbox.checked = false;
+        const attcInputsContainer = document.getElementById('attcInputsContainer');
+        if (attcInputsContainer) attcInputsContainer.style.display = 'none';
+      }
+    }
+
     // Always hide advanced settings (kept in DOM)
     if (advanced) advanced.style.display = 'none';
 
@@ -313,8 +326,18 @@ function calculate() {
 
       const pagesCount = parseFloat(document.getElementById('pages').value) || 0;
 
+      // Check if escalated request is enabled and read custom ATTC values
+      const isEscalated = document.getElementById('escalatedRequest')?.checked || false;
+      let repSampleAttc = 25;
+      let fmeAttc = 40;
+      let vpatAttc = 20;
+      if (isEscalated) {
+        repSampleAttc = parseInt(document.getElementById('repSampleAttcInput').value) || 25;
+        fmeAttc = parseInt(document.getElementById('fmeAttcInput').value) || 40;
+        vpatAttc = parseInt(document.getElementById('vpatAttcInput').value) || 20;
+      }
+
       // Step 1: VPAT Rep sample
-      const repSampleAttc = 25; // from Internal: VPAT representative sample
       const step1Days = repSampleAttc;
       const start = new Date(startDateValue);
       const step1Delivery = addBusinessDays(start, Math.round(step1Days));
@@ -325,7 +348,6 @@ function calculate() {
 
       // Step 2: Full Manual Evaluation (starting from step1 delivery + delay)
       let step2Days = 0;
-      const fmeAttc = 40;
       let pagesEffort = pagesCount * pageEffort;
       let pagesReview = pagesCount * finalReview;
       if (pagesCount <= 10) {
@@ -342,7 +364,6 @@ function calculate() {
       const step2DeliveryWithDelay = addBusinessDays(step2Delivery, deliveryMeetingDelay);
 
       // Step 3: VPAT (starting from step2 delivery + delay)
-      const vpatAttc = 20;
       const step3Days = vpatAttc;
       const step3Delivery = addBusinessDays(step2DeliveryWithDelay, Math.round(step3Days));
 
@@ -549,6 +570,22 @@ function addBusinessDays(date, days) {
   if (el) el.addEventListener("input", calculate);
 });
 document.getElementById("startDate").addEventListener("input", () => { validateStartDate(); calculate(); });
+
+// Watch for escalated request checkbox and ATTC inputs
+const escalatedRequestCheckbox = document.getElementById('escalatedRequest');
+if (escalatedRequestCheckbox) {
+  escalatedRequestCheckbox.addEventListener('change', () => {
+    const attcInputsContainer = document.getElementById('attcInputsContainer');
+    if (attcInputsContainer) {
+      attcInputsContainer.style.display = escalatedRequestCheckbox.checked ? '' : 'none';
+    }
+    calculate();
+  });
+}
+["repSampleAttcInput", "fmeAttcInput", "vpatAttcInput"].forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("input", calculate);
+});
 
 // Also watch advanced fields when unlocked
 ["pageEffort", "scoping", "triage", "finalReview", "difficultyMultiplier", "onshoreMultiplier"].forEach((id) => {
