@@ -15,7 +15,7 @@ const MANAGER_SERVICES = [
   { Services: 'Internal: VPAT representative sample', ATTC: 25, Buffer: 0 },
   { Services: 'Live Consultation', ATTC: 10, Buffer: 0 },
   { Services: 'Technical Question', ATTC: 13, Buffer: 0 },
-  { Services: 'Validation', ATTC: 17, Buffer: 0 },
+  { Services: 'Validation', ATTC: 25, Buffer: 0 },
   { Services: 'VPAT', ATTC: 20, Buffer: 0 },
   { Services: 'VPAT Update', ATTC: 20, Buffer: 0 },
   { Services: 'Demand Review', ATTC: 15, Buffer: 0 },
