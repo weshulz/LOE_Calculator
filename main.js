@@ -11,15 +11,14 @@
 // Services: list of service types with ATTC and Buffer (editable)
 const MANAGER_SERVICES = [
   { Services: 'Evaluation', ATTC: 40, Buffer: 0 },
-  { Services: 'Full Manual Evaluation', ATTC: 40, Buffer: 0 },
-  { Services: 'Internal: VPAT representative sample', ATTC: 25, Buffer: 0 },
+  { Services: 'FME: Test Plan', ATTC: 10, Buffer: 0 },
+  { Services: 'FME: Evaluation', ATTC: 40, Buffer: 0 },
   { Services: 'Live Consultation', ATTC: 10, Buffer: 0 },
-  { Services: 'Technical Question', ATTC: 13, Buffer: 0 },
-  { Services: 'Validation', ATTC: 25, Buffer: 0 },
-  { Services: 'VPAT', ATTC: 20, Buffer: 0 },
-  { Services: 'VPAT Update', ATTC: 20, Buffer: 0 },
-  { Services: 'Demand Review', ATTC: 15, Buffer: 0 },
-  { Services: 'Design Evaluation', ATTC: 30, Buffer: 0 }
+  { Services: 'Technical Question', ATTC: 10, Buffer: 0 },
+  { Services: 'Validation', ATTC: 15, Buffer: 0 },
+  { Services: 'VPAT & VPAT Update', ATTC: 20, Buffer: 0 },
+  { Services: 'Demand Review', ATTC: 10, Buffer: 0 },
+  { Services: 'Design Evaluation', ATTC: 20, Buffer: 0 }
 ];
 
 // Multipliers and small constants managers may adjust
