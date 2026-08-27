@@ -40,11 +40,11 @@ const MANAGER_HOLIDAYS = [
 ];
 
 // Which services use the page-based (manual) calculation
-const PAGE_BASED_SERVICES = ['Full Manual Evaluation'];
-const PAGES_VISIBLE_SERVICES = ['Full Manual Evaluation'];
+const PAGE_BASED_SERVICES = ['FME: Evaluation'];
+const PAGES_VISIBLE_SERVICES = ['FME: Evaluation'];
 
 // Default service selected when the page loads (editable)
-const DEFAULT_SELECTED_SERVICE = 'Full Manual Evaluation';
+const DEFAULT_SELECTED_SERVICE = 'FME: Evaluation';
 
 // This function is a deprecated feature, remove soon
 function toggleAdvancedInputs() {
@@ -284,7 +284,7 @@ function calculate() {
     const svc = selectedOption.value;
 
     // Full Manual Evaluation: ATTC + Buffer + repSample + pages*finalReview + pages*pageEffort
-    if (svc === 'Full Manual Evaluation') {
+    if (svc === 'FME: Evaluation') {
       // Components: ATTC + Buffer + Scoping + (pageEffort * pages) + triage + (finalReview * pages)
       const mult = window.GLOBAL_MULTIPLIERS || {};
       const attc = parseFloat(selectedOption.dataset.attc) || 0;

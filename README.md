@@ -16,7 +16,7 @@ Files of interest
 Overview
 --------
 This small web app estimates testing project timelines. Key behavior:
-- Service Type: choose a service at the top of the form. "Full Manual Evaluation" is the default and uses the existing page-based calculation.
+- Service Type: choose a service at the top of the form. "FME: Evaluation" is the default and uses the existing page-based calculation.
 - Non-manual services: timeline is taken from the service's ATTC + Buffer values (see `data/services.json`). When a non-manual service is selected, the page inputs (complexity, onshore, vpat, pages) and advanced inputs are hidden, but the Service Type select and Service Ticket Created Date remain visible.
 - Service Ticket Created Date: formerly "Project Start Date"; defaults to today and is used to compute an Estimated Delivery Date. Delivery computation skips weekends (Saturday/Sunday). Holidays are not accounted for.
 - Results are shown as a definition list (`<dl>`) with separate lines for the estimated timeline and the estimated delivery date.
@@ -91,7 +91,7 @@ Example: pages=10, pageEffort=4.5, difficultyMultiplier=1, onshoreMultiplier=1, 
 
 Where extraDays is intentionally rounded down (a partial block of findings under 20 does not add an extra day). If you'd prefer to round up or use a different ratio, update the logic in `main.js` here:
 
- - The list `manualNames = ['Full Manual Evaluation', 'Evaluation']` controls which services use manual calculation.
+ - The list `manualNames = ['FME: Evaluation', 'Evaluation']` controls which services use manual calculation.
  - The findings rule lives in `main.js` where it does `Math.floor(findings / 20)`; change to `Math.ceil(findings / 20)` to round up instead.
 
 How the Estimated Delivery Date is calculated
